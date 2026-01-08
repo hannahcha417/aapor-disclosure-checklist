@@ -6,11 +6,14 @@ Initial implementation of the AAPOR Disclosure Checklist for the Use of AI in Su
 
 Follow these steps to run this codebase:
 
-# Install required libraries
+### Install required libraries
 
 Open a terminal in the root directory and run `npm install`.
 
-# Run the app
+### Set .env
+Set .env with the necessary supabase key and project URL.
+
+### Run the app
 
 You can run the app by running the following command in your terminal:
 `npm run dev`.
