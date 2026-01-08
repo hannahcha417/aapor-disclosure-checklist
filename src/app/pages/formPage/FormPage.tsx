@@ -28,6 +28,7 @@ function FormPage({
   );
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "">("");
+  const [instructionsExpanded, setInstructionsExpanded] = useState(true);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined
   );
@@ -164,6 +165,33 @@ function FormPage({
       </header>
 
       <main className="content">
+        <div className="instructions">
+          <div className="instructions-header">
+            <h3>
+              For each question in this checklist, the researcher should
+              indicate one of the following:
+            </h3>
+            <button
+              className="arrow-btn"
+              onClick={() => setInstructionsExpanded(!instructionsExpanded)}
+              aria-label={instructionsExpanded ? "Collapse" : "Expand"}
+            >
+              {instructionsExpanded ? "▲" : "▼"}
+            </button>
+          </div>
+          {instructionsExpanded && (
+            <div className="instructions-content">
+              <ul>
+                <li>The answer to the question</li>
+                <li>Question is not applicable</li>
+                <li>Answer is unknown to the researcher and why </li>
+                <li>Answer is proprietary and why </li>
+                <li>Answer would violate privacy of participants and why </li>
+              </ul>
+            </div>
+          )}
+        </div>
+
         <section>
           <h2>Immediate Disclosures</h2>
           <p>

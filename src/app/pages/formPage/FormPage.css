@@ -138,6 +138,73 @@ section p {
   color: #666;
 }
 
+.instructions {
+  background-color: #f8f8f8;
+  border-left: 4px solid #736be7;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.instructions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+}
+
+.instructions-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.instructions .arrow-btn {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: var(--text-primary);
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.instructions .arrow-btn:hover {
+  opacity: 0.6;
+}
+
+.instructions .arrow-btn:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 2px;
+}
+
+.instructions .arrow-btn:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.instructions-content {
+  padding: 0 1.5rem 1.5rem 1.5rem;
+}
+
+.instructions-content p {
+  margin: 0 0 0.75rem 0;
+  color: #333;
+  font-weight: 500;
+}
+
+.instructions-content ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  list-style-type: disc;
+}
+
+.instructions-content li {
+  color: #555;
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
 .tab-btn {
   position: fixed;
   top: 1rem;
