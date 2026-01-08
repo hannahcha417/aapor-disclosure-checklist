@@ -1,0 +1,273 @@
+.card {
+  background: var(--background);
+  padding: 1rem;
+  margin: 1.5rem 0;
+  box-shadow: var(--shadow);
+  border-radius: 12px;
+  outline: 1px solid #000;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header h1 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+}
+
+.arrow-btn {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: var(--text-primary);
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.arrow-btn:hover {
+  opacity: 0.6;
+}
+
+.arrow-btn:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 2px;
+}
+
+.arrow-btn:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.card-content {
+  margin-top: 1rem;
+  padding-top: -0.2rem;
+  color: var(--text-primary);
+}
+
+.card-content label {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.card-content input,
+.card-content textarea {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background-color: #c2c2c2;
+  font-size: 1rem;
+  color: var(--text-primary);
+  resize: none;
+  overflow: hidden;
+  min-height: 1.5rem;
+  font-family: inherit;
+}
+
+.summary {
+  margin-top: 0.75rem;
+  color: #444;
+}
+
+.see-more-btn {
+  background: none;
+  border: none;
+  color: var(--accent-color);
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.9rem;
+  text-decoration: underline;
+  display: inline;
+  margin-left: 0.3rem;
+}
+
+.see-more-btn:hover {
+  color: var(--hover-color);
+}
+
+.see-more-btn:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 2px;
+}
+
+.see-more-btn:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.question-label {
+  display: inline;
+  margin-bottom: 0.5rem;
+}
+
+.question-label .red {
+  color: #e53e3e;
+}
+
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 0.5rem;
+}
+
+.tooltip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: #666;
+  color: var(--text-contrast);
+  font-size: 0.75rem;
+  font-weight: bold;
+  user-select: none;
+}
+
+.tooltip-text {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  left: 50%;
+  bottom: 125%;
+  transform: translateX(-50%);
+  background-color: var(--button-color);
+  color: var(--text-contrast);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  white-space: normal;
+  width: 20rem;
+  text-align: left;
+  z-index: 1000;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--button-color);
+}
+
+.tooltip-container:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+.required-asterisk {
+  color: #e53e3e;
+  font-weight: bold;
+}
+
+.card-title-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.incomplete-indicator-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.incomplete-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: var(--accent-color);
+  color: var(--text-contrast);
+  font-size: 0.875rem;
+  font-weight: bold;
+  user-select: none;
+}
+
+.incomplete-tooltip {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  left: 50%;
+  bottom: 125%;
+  transform: translateX(-50%);
+  background-color: var(--button-color);
+  color: var(--text-contrast);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  text-align: center;
+  z-index: 1000;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.incomplete-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--button-color);
+}
+
+.incomplete-indicator-container:hover .incomplete-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+.button-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.option-button {
+  padding: 0.5rem 1rem;
+  border: 2px solid #ccc;
+  border-radius: 6px;
+  background-color: var(--background);
+  color: var(--text-primary);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.option-button:hover {
+  border-color: var(--accent-color);
+  background-color: var(--hover-background);
+}
+
+.option-button.selected {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+  color: var(--text-contrast);
+}
+
+.option-button:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 2px;
+}
+
+.option-button:focus:not(:focus-visible) {
+  outline: none;
+}

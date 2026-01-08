@@ -1,0 +1,64 @@
+.sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 20rem;
+  height: 100%;
+  background-color: #ffffff;
+  color: black;
+  padding: 1rem;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  z-index: 1000;
+}
+
+.sidebar.open {
+  transform: translateX(0);
+}
+
+.sidebar ul {
+  list-style: none;
+  padding-left: 0.2rem;
+}
+
+.sidebar header {
+  font-weight: bold;
+  font-size: 1.2rem;
+  margin-bottom: 0.3rem;
+}
+
+.sidebar h2 {
+  font-weight: bold;
+  font-size: 1.05rem;
+  margin-bottom: 0.3rem;
+  padding-top: 1rem;
+}
+
+.sidebar p {
+  font-size: 1rem;
+  margin-top: 0rem;
+}
+
+.close-btn {
+  position: absolute;
+  top: 0rem;
+  right: -0.1rem;
+  background: transparent;
+  border: none;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+  color: black;
+}
+
+.close-btn:hover {
+  opacity: 0.6;
+}
+
+.close-btn:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 2px;
+}
+
+.close-btn:focus:not(:focus-visible) {
+  outline: none;
+}

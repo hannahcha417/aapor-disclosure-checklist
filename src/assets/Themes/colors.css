@@ -1,0 +1,13 @@
+:root {
+  --background: #ffffff;
+  --background-contrast: rgb(27, 27, 27);
+  --accent-color: #736be7;
+  --hover-color: #948fdf;
+  --button-color: #333;
+  --shadow: 0 5px 15px rgba(142, 148, 175, 0.4);
+  --text-primary: #000000ff;
+  --text-secondary: #666;
+  --text-contrast: #ffffff;
+  --text-error: #d32f2f;
+  --alert-icon: #d21f3c;
+}
