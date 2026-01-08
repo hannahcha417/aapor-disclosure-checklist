@@ -260,7 +260,7 @@ section p {
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.1s ease;
-  max-width: 200px;
+  max-width: 250px;
 }
 
 .submit-btn:hover {

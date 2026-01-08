@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { FiEdit, FiArrowLeft, FiSave } from "react-icons/fi";
+import { pdf } from "@react-pdf/renderer";
+import { saveAs } from "file-saver";
 import Sidebar from "../../../components/Sidebar";
 import ExpandableCard from "../../../components/ExpandableCard";
 import { getCardById } from "../../../data/formData";
 import { createForm, updateForm } from "../../../utils/forms";
+import { FormPDF } from "../../../utils/FormPDF";
 import "./FormPage.css";
 
 type FormPageProps = {
@@ -101,9 +104,16 @@ function FormPage({
     }
   };
 
-  const handleSubmit = () => {
-    // Placeholder for submit logic
-    console.log("Form submitted!");
+  const handleExportToPDF = async () => {
+    try {
+      const blob = await pdf(
+        <FormPDF formTitle={formTitle} formData={formData} />
+      ).toBlob();
+      const fileName = `${formTitle.replace(/\s+/g, "_")}.pdf`;
+      saveAs(blob, fileName);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+    }
   };
 
   return (
@@ -184,9 +194,11 @@ function FormPage({
               <ul>
                 <li>The answer to the question</li>
                 <li>Question is not applicable</li>
-                <li>Answer is unknown to the researcher and why </li>
-                <li>Answer is proprietary and why </li>
-                <li>Answer would violate privacy of participants and why </li>
+                <li>Answer is unknown to the researcher and explain why </li>
+                <li>Answer is proprietary and explainwhy </li>
+                <li>
+                  Answer would violate privacy of participants and explain why{" "}
+                </li>
               </ul>
             </div>
           )}
@@ -278,8 +290,8 @@ function FormPage({
         </section>
 
         <div className="submit-container">
-          <button className="submit-btn" onClick={handleSubmit}>
-            Approve
+          <button className="submit-btn" onClick={handleExportToPDF}>
+            Export to PDF
           </button>
         </div>
       </main>
