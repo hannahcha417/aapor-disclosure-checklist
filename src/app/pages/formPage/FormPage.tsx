@@ -9,6 +9,8 @@ import { createForm, updateForm } from "../../../utils/forms";
 import { FormPDF } from "../../../utils/FormPDF";
 import "./FormPage.css";
 
+// TODO: Put sections into tooltips
+
 type FormPageProps = {
   onBackToDashboard: () => void;
   formId?: string;
