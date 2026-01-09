@@ -41,8 +41,7 @@ function Login({ onSwitchToSignup, onLoginSuccess }: LoginProps) {
     setLoading(true);
 
     try {
-      const redirectTo = `${window.location.origin}/aapor-disclosure-checklist/`;
-      const { error } = await resetPassword(email, redirectTo);
+      const { error } = await resetPassword(email, "");
       if (error) {
         setError(error.message);
       } else {
