@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import "./App.css";
 import Login from "./pages/login/Login";
 import Signup from "./pages/login/Signup";
+import UpdatePassword from "./pages/login/UpdatePassword";
 import Dashboard from "./pages/dashboard/Dashboard";
 import FormPage from "./pages/formPage/FormPage";
 import { getCurrentUser, signOut } from "../utils/auth";
 
-type AuthPage = "login" | "signup";
+type AuthPage = "login" | "signup" | "update-password";
 type AppPage = "dashboard" | "survey";
 
 function App() {
@@ -38,6 +39,12 @@ function App() {
     };
 
     checkUser();
+
+    // Check if we're on the update-password route
+    const hash = window.location.hash;
+    if (hash.includes("type=recovery")) {
+      setAuthPage("update-password");
+    }
   }, []);
 
   const handleLoginSuccess = async () => {
@@ -48,6 +55,12 @@ function App() {
   const handleSignupSuccess = async () => {
     const currentUser = await getCurrentUser();
     setUser(currentUser);
+  };
+
+  const handlePasswordUpdated = async () => {
+    const currentUser = await getCurrentUser();
+    setUser(currentUser);
+    setAuthPage("login");
   };
 
   const handleLogout = async () => {
@@ -94,6 +107,9 @@ function App() {
 
   // Show auth screens if not logged in
   if (!user) {
+    if (authPage === "update-password") {
+      return <UpdatePassword onPasswordUpdated={handlePasswordUpdated} />;
+    }
     if (authPage === "signup") {
       return (
         <Signup
