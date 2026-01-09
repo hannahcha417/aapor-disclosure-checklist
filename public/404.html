@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirecting...</title>
+    <script>
+      // Redirect to index.html with the path preserved in the hash
+      const path = window.location.pathname.replace(
+        "/aapor-disclosure-checklist",
+        ""
+      );
+      const redirect =
+        "/aapor-disclosure-checklist/" +
+        (path === "/" ? "" : "?redirect=" + path) +
+        window.location.search +
+        window.location.hash;
+      window.location.replace(redirect);
+    </script>
+  </head>
+  <body>
+    Redirecting...
+  </body>
+</html>
