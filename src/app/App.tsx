@@ -28,6 +28,14 @@ function App() {
   // Check if user is already logged in on mount
   useEffect(() => {
     const checkUser = async () => {
+      // Check if we're on the update-password route first
+      const hash = window.location.hash;
+      if (hash.includes("type=recovery")) {
+        setAuthPage("update-password");
+        setLoading(false);
+        return; // Don't check user yet, let password update handle it
+      }
+
       try {
         const currentUser = await getCurrentUser();
         setUser(currentUser);
@@ -39,12 +47,6 @@ function App() {
     };
 
     checkUser();
-
-    // Check if we're on the update-password route
-    const hash = window.location.hash;
-    if (hash.includes("type=recovery")) {
-      setAuthPage("update-password");
-    }
   }, []);
 
   const handleLoginSuccess = async () => {
