@@ -7,6 +7,7 @@ import ExpandableCard from "../../../components/ExpandableCard";
 import { getCardById } from "../../../data/formData";
 import { createForm, updateForm } from "../../../utils/forms";
 import { FormPDF } from "../../../utils/FormPDF";
+import { FormPDFSummary } from "../../../utils/FormPDFSummary";
 import "./FormPage.css";
 
 // TODO: Put sections into tooltips
@@ -106,12 +107,18 @@ function FormPage({
     }
   };
 
-  const handleExportToPDF = async () => {
+  const handleExportToPDF = async (format: "detailed" | "summary") => {
     try {
-      const blob = await pdf(
-        <FormPDF formTitle={formTitle} formData={formData} />
-      ).toBlob();
-      const fileName = `${formTitle.replace(/\s+/g, "_")}.pdf`;
+      const component =
+        format === "summary" ? (
+          <FormPDFSummary formTitle={formTitle} formData={formData} />
+        ) : (
+          <FormPDF formTitle={formTitle} formData={formData} />
+        );
+
+      const blob = await pdf(component).toBlob();
+      const suffix = format === "summary" ? "_summary" : "";
+      const fileName = `${formTitle.replace(/\s+/g, "_")}${suffix}.pdf`;
       saveAs(blob, fileName);
     } catch (error) {
       console.error("Error generating PDF:", error);
@@ -292,8 +299,18 @@ function FormPage({
         </section>
 
         <div className="submit-container">
-          <button className="submit-btn" onClick={handleExportToPDF}>
-            Export to PDF
+          <button
+            className="submit-btn"
+            onClick={() => handleExportToPDF("detailed")}
+          >
+            Export to PDF (Numbered)
+          </button>
+          <button
+            className="submit-btn"
+            onClick={() => handleExportToPDF("summary")}
+            style={{ marginTop: "10px" }}
+          >
+            Export to PDF (Paragraph)
           </button>
         </div>
       </main>

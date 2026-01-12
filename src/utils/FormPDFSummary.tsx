@@ -1,0 +1,100 @@
+import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { cardSections } from "../data/formData";
+import type { CardData } from "../data/formData";
+
+const styles = StyleSheet.create({
+  page: {
+    padding: 40,
+    fontSize: 11,
+    fontFamily: "Helvetica",
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  sectionTitle: {
+    fontSize: 16,
+    marginTop: 20,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  cardTitle: {
+    fontSize: 13,
+    marginTop: 8,
+    marginBottom: 8,
+    fontWeight: "bold",
+    color: "#736be7",
+  },
+  summaryParagraph: {
+    fontSize: 10,
+    marginBottom: 12,
+    lineHeight: 1.5,
+    color: "#555",
+    textAlign: "justify",
+  },
+  noAnswer: {
+    fontSize: 10,
+    marginBottom: 12,
+    color: "#999",
+    fontStyle: "italic",
+  },
+});
+
+type FormPDFSummaryProps = {
+  formTitle: string;
+  formData: Record<string, any>;
+};
+
+export const FormPDFSummary = ({
+  formTitle,
+  formData,
+}: FormPDFSummaryProps) => {
+  // Group cards by section
+  const immediateDisclosures = ["tasks-performed", "human-oversight"];
+  const coreEnhanced = [
+    "model-details",
+    "access-tooling-details",
+    "core-prompts",
+    "additional-enhanced-disclosures",
+    "human-respondents-disclosure",
+  ];
+
+  const renderCardSummary = (card: CardData) => {
+    // Collect all non-empty answers
+    const answers = card.questions
+      .map((question) => formData[question.id])
+      .filter((answer) => answer && answer.trim());
+
+    return (
+      <View key={card.id}>
+        <Text style={styles.cardTitle}>{card.title}</Text>
+        {answers.length > 0 ? (
+          <Text style={styles.summaryParagraph}>{answers.join(" ")}</Text>
+        ) : (
+          <Text style={styles.noAnswer}>No answer</Text>
+        )}
+      </View>
+    );
+  };
+
+  // Group cards by section
+  const immediateDisclosureCards = cardSections.filter((card) =>
+    immediateDisclosures.includes(card.id)
+  );
+  const coreEnhancedCards = cardSections.filter((card) =>
+    coreEnhanced.includes(card.id)
+  );
+
+  return (
+    <Document>
+      <Page style={styles.page}>
+        <Text style={styles.title}>{formTitle}</Text>
+        <Text style={styles.sectionTitle}>Immediate Disclosures</Text>
+        {immediateDisclosureCards.map((card) => renderCardSummary(card))}
+        <Text style={styles.sectionTitle}>Core/Enhanced Questions</Text>
+        {coreEnhancedCards.map((card) => renderCardSummary(card))}
+      </Page>
+    </Document>
+  );
+};
