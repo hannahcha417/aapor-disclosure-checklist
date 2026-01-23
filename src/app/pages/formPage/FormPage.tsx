@@ -45,6 +45,7 @@ function FormPage({
   const [exportFileType, setExportFileType] = useState<"pdf" | "docx" | "txt">(
     "pdf"
   );
+  const [includeEmpty, setIncludeEmpty] = useState(true);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined
   );
@@ -128,14 +129,27 @@ function FormPage({
       if (exportFileType === "pdf") {
         const component =
           exportFormat === "summary" ? (
-            <FormPDFSummary formTitle={formTitle} formData={formData} />
+            <FormPDFSummary
+              formTitle={formTitle}
+              formData={formData}
+              includeEmpty={includeEmpty}
+            />
           ) : (
-            <FormPDF formTitle={formTitle} formData={formData} />
+            <FormPDF
+              formTitle={formTitle}
+              formData={formData}
+              includeEmpty={includeEmpty}
+            />
           );
         const blob = await pdf(component).toBlob();
         saveAs(blob, `${baseFileName}${suffix}.pdf`);
       } else if (exportFileType === "docx") {
-        const blob = await generateDocx(formTitle, formData, exportFormat);
+        const blob = await generateDocx(
+          formTitle,
+          formData,
+          exportFormat,
+          includeEmpty
+        );
         // Use direct download link approach for DOCX
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -146,7 +160,12 @@ function FormPage({
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
       } else if (exportFileType === "txt") {
-        const blob = generateTxt(formTitle, formData, exportFormat);
+        const blob = generateTxt(
+          formTitle,
+          formData,
+          exportFormat,
+          includeEmpty
+        );
         saveAs(blob, `${baseFileName}${suffix}.txt`);
       }
     } catch (error) {
@@ -397,6 +416,14 @@ function FormPage({
               </select>
             </div>
           </div>
+          <label className="export-checkbox">
+            <input
+              type="checkbox"
+              checked={includeEmpty}
+              onChange={(e) => setIncludeEmpty(e.target.checked)}
+            />
+            Include unanswered questions
+          </label>
           <button className="submit-btn" onClick={handleExport}>
             Export
           </button>

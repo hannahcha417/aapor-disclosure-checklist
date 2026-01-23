@@ -396,3 +396,39 @@ section p {
   outline: none;
   border-color: #667eea;
 }
+
+.export-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #333;
+  cursor: pointer;
+}
+
+.export-checkbox input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  background: white;
+  border: 2px solid #667eea;
+  border-radius: 4px;
+  position: relative;
+}
+
+.export-checkbox input[type="checkbox"]:checked {
+  background: #667eea;
+}
+
+.export-checkbox input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}

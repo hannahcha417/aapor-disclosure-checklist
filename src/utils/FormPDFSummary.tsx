@@ -44,11 +44,13 @@ const styles = StyleSheet.create({
 type FormPDFSummaryProps = {
   formTitle: string;
   formData: Record<string, any>;
+  includeEmpty?: boolean;
 };
 
 export const FormPDFSummary = ({
   formTitle,
   formData,
+  includeEmpty = true,
 }: FormPDFSummaryProps) => {
   // Group cards by section
   const immediateDisclosures = ["tasks-performed", "human-oversight"];
@@ -65,6 +67,9 @@ export const FormPDFSummary = ({
     const answers = card.questions
       .map((question) => formData[question.id])
       .filter((answer) => answer && answer.trim());
+
+    // Skip card if no answers and includeEmpty is false
+    if (!includeEmpty && answers.length === 0) return null;
 
     return (
       <View key={card.id}>

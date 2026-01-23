@@ -57,9 +57,14 @@ const styles = StyleSheet.create({
 type FormPDFProps = {
   formTitle: string;
   formData: Record<string, any>;
+  includeEmpty?: boolean;
 };
 
-export const FormPDF = ({ formTitle, formData }: FormPDFProps) => {
+export const FormPDF = ({
+  formTitle,
+  formData,
+  includeEmpty = true,
+}: FormPDFProps) => {
   // Group cards by section
   const immediateDisclosures = ["tasks-performed", "human-oversight"];
   const coreEnhanced = [
@@ -71,12 +76,19 @@ export const FormPDF = ({ formTitle, formData }: FormPDFProps) => {
   ];
 
   const renderCard = (card: CardData) => {
+    // Check if card has any answers
+    const hasAnswers = card.questions.some((q) => formData[q.id]?.trim());
+    if (!includeEmpty && !hasAnswers) return null;
+
     return (
       <View key={card.id}>
         <Text style={styles.cardTitle}>{card.title}</Text>
 
         {card.questions.map((question, index) => {
           const answer = formData[question.id];
+
+          // Skip unanswered questions if includeEmpty is false
+          if (!includeEmpty && !answer?.trim()) return null;
 
           // Apply the same numbering logic as ExpandableCard
           let questionNumber: string | number;

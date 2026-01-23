@@ -22,7 +22,8 @@ const coreEnhancedCards = cardSections.filter((card) =>
 // Generate detailed (numbered) content
 function generateDetailedContent(
   formTitle: string,
-  formData: Record<string, any>
+  formData: Record<string, any>,
+  includeEmpty: boolean = true
 ): Paragraph[] {
   const paragraphs: Paragraph[] = [];
 
@@ -36,6 +37,10 @@ function generateDetailedContent(
   );
 
   const renderCard = (card: CardData) => {
+    // Check if card has any answers
+    const hasAnswers = card.questions.some((q) => formData[q.id]?.trim());
+    if (!includeEmpty && !hasAnswers) return;
+
     // Card title
     paragraphs.push(
       new Paragraph({
@@ -47,6 +52,9 @@ function generateDetailedContent(
 
     card.questions.forEach((question, index) => {
       const answer = formData[question.id];
+
+      // Skip unanswered questions if includeEmpty is false
+      if (!includeEmpty && !answer?.trim()) return;
 
       // Apply the same numbering logic as ExpandableCard
       let questionNumber: string | number;
@@ -116,7 +124,8 @@ function generateDetailedContent(
 // Generate summary (paragraph) content
 function generateSummaryContent(
   formTitle: string,
-  formData: Record<string, any>
+  formData: Record<string, any>,
+  includeEmpty: boolean = true
 ): Paragraph[] {
   const paragraphs: Paragraph[] = [];
 
@@ -130,6 +139,14 @@ function generateSummaryContent(
   );
 
   const renderCardSummary = (card: CardData) => {
+    // Collect all non-empty answers
+    const answers = card.questions
+      .map((question) => formData[question.id])
+      .filter((answer) => answer && answer.trim());
+
+    // Skip card if no answers and includeEmpty is false
+    if (!includeEmpty && answers.length === 0) return;
+
     // Card title
     paragraphs.push(
       new Paragraph({
@@ -138,11 +155,6 @@ function generateSummaryContent(
         spacing: { before: 300, after: 200 },
       })
     );
-
-    // Collect all non-empty answers
-    const answers = card.questions
-      .map((question) => formData[question.id])
-      .filter((answer) => answer && answer.trim());
 
     if (answers.length > 0) {
       paragraphs.push(
@@ -193,12 +205,13 @@ function generateSummaryContent(
 export async function generateDocx(
   formTitle: string,
   formData: Record<string, any>,
-  format: "detailed" | "summary"
+  format: "detailed" | "summary",
+  includeEmpty: boolean = true
 ): Promise<Blob> {
   const paragraphs =
     format === "summary"
-      ? generateSummaryContent(formTitle, formData)
-      : generateDetailedContent(formTitle, formData);
+      ? generateSummaryContent(formTitle, formData, includeEmpty)
+      : generateDetailedContent(formTitle, formData, includeEmpty);
 
   const doc = new Document({
     sections: [
@@ -217,15 +230,23 @@ export async function generateDocx(
 // Generate detailed (numbered) text content
 function generateDetailedText(
   formTitle: string,
-  formData: Record<string, any>
+  formData: Record<string, any>,
+  includeEmpty: boolean = true
 ): string {
   let text = `${formTitle}\n${"=".repeat(formTitle.length)}\n\n`;
 
   const renderCard = (card: CardData) => {
+    // Check if card has any answers
+    const hasAnswers = card.questions.some((q) => formData[q.id]?.trim());
+    if (!includeEmpty && !hasAnswers) return;
+
     text += `\n${card.title}\n${"-".repeat(card.title.length)}\n`;
 
     card.questions.forEach((question, index) => {
       const answer = formData[question.id];
+
+      // Skip unanswered questions if includeEmpty is false
+      if (!includeEmpty && !answer?.trim()) return;
 
       let questionNumber: string | number;
       if (question.id === "q9") {
@@ -255,16 +276,20 @@ function generateDetailedText(
 // Generate summary (paragraph) text content
 function generateSummaryText(
   formTitle: string,
-  formData: Record<string, any>
+  formData: Record<string, any>,
+  includeEmpty: boolean = true
 ): string {
   let text = `${formTitle}\n${"=".repeat(formTitle.length)}\n\n`;
 
   const renderCardSummary = (card: CardData) => {
-    text += `\n${card.title}\n${"-".repeat(card.title.length)}\n`;
-
     const answers = card.questions
       .map((question) => formData[question.id])
       .filter((answer) => answer && answer.trim());
+
+    // Skip card if no answers and includeEmpty is false
+    if (!includeEmpty && answers.length === 0) return;
+
+    text += `\n${card.title}\n${"-".repeat(card.title.length)}\n`;
 
     if (answers.length > 0) {
       text += answers.join(" ") + "\n";
@@ -285,12 +310,13 @@ function generateSummaryText(
 export function generateTxt(
   formTitle: string,
   formData: Record<string, any>,
-  format: "detailed" | "summary"
+  format: "detailed" | "summary",
+  includeEmpty: boolean = true
 ): Blob {
   const content =
     format === "summary"
-      ? generateSummaryText(formTitle, formData)
-      : generateDetailedText(formTitle, formData);
+      ? generateSummaryText(formTitle, formData, includeEmpty)
+      : generateDetailedText(formTitle, formData, includeEmpty);
 
   return new Blob([content], { type: "text/plain;charset=utf-8" });
 }
