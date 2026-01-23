@@ -8,6 +8,7 @@ import { getCardById } from "../../../data/formData";
 import { createForm, updateForm } from "../../../utils/forms";
 import { FormPDF } from "../../../utils/FormPDF";
 import { FormPDFSummary } from "../../../utils/FormPDFSummary";
+import { generateDocx, generateTxt } from "../../../utils/exportUtils";
 import "./FormPage.css";
 
 // TODO: Put sections into tooltips
@@ -17,6 +18,7 @@ type FormPageProps = {
   formId?: string;
   initialTitle?: string;
   initialData?: Record<string, any>;
+  isGuest?: boolean;
 };
 
 function FormPage({
@@ -24,6 +26,7 @@ function FormPage({
   formId: initialFormId,
   initialTitle,
   initialData,
+  isGuest = false,
 }: FormPageProps) {
   const [sideBarOpen, setSidebarOpen] = useState(false);
   const [formTitle, setFormTitle] = useState(initialTitle || "Untitled Form");
@@ -35,12 +38,22 @@ function FormPage({
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "">("");
   const [instructionsExpanded, setInstructionsExpanded] = useState(true);
+  const [showGuestExitWarning, setShowGuestExitWarning] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"detailed" | "summary">(
+    "detailed"
+  );
+  const [exportFileType, setExportFileType] = useState<"pdf" | "docx" | "txt">(
+    "pdf"
+  );
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined
   );
 
-  // Auto-save every 5 seconds
+  // Auto-save every 5 seconds (only for logged-in users)
   useEffect(() => {
+    // Skip auto-save for guests
+    if (isGuest) return;
+
     const saveForm = async () => {
       if (!formTitle.trim()) return;
 
@@ -81,7 +94,7 @@ function FormPage({
         clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [formTitle, formData, formId]);
+  }, [formTitle, formData, formId, isGuest]);
 
   const handleManualSave = async () => {
     if (!formTitle.trim()) return;
@@ -107,21 +120,37 @@ function FormPage({
     }
   };
 
-  const handleExportToPDF = async (format: "detailed" | "summary") => {
+  const handleExport = async () => {
     try {
-      const component =
-        format === "summary" ? (
-          <FormPDFSummary formTitle={formTitle} formData={formData} />
-        ) : (
-          <FormPDF formTitle={formTitle} formData={formData} />
-        );
+      const suffix = exportFormat === "summary" ? "_summary" : "";
+      const baseFileName = formTitle.replace(/\s+/g, "_");
 
-      const blob = await pdf(component).toBlob();
-      const suffix = format === "summary" ? "_summary" : "";
-      const fileName = `${formTitle.replace(/\s+/g, "_")}${suffix}.pdf`;
-      saveAs(blob, fileName);
+      if (exportFileType === "pdf") {
+        const component =
+          exportFormat === "summary" ? (
+            <FormPDFSummary formTitle={formTitle} formData={formData} />
+          ) : (
+            <FormPDF formTitle={formTitle} formData={formData} />
+          );
+        const blob = await pdf(component).toBlob();
+        saveAs(blob, `${baseFileName}${suffix}.pdf`);
+      } else if (exportFileType === "docx") {
+        const blob = await generateDocx(formTitle, formData, exportFormat);
+        // Use direct download link approach for DOCX
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${baseFileName}${suffix}.docx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else if (exportFileType === "txt") {
+        const blob = generateTxt(formTitle, formData, exportFormat);
+        saveAs(blob, `${baseFileName}${suffix}.txt`);
+      }
     } catch (error) {
-      console.error("Error generating PDF:", error);
+      console.error("Error generating export:", error);
     }
   };
 
@@ -129,9 +158,48 @@ function FormPage({
     <div className="container">
       <Sidebar isOpen={sideBarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <button className="tab-btn left" onClick={onBackToDashboard}>
+      <button
+        className="tab-btn left"
+        onClick={() => {
+          if (isGuest) {
+            setShowGuestExitWarning(true);
+          } else {
+            onBackToDashboard();
+          }
+        }}
+      >
         <FiArrowLeft />
       </button>
+
+      {showGuestExitWarning && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Leave Form?</h2>
+            <p>
+              You are in <strong>guest mode</strong>. Leaving this page will{" "}
+              <strong>lose all your form progress</strong>.
+            </p>
+            <p>Are you sure you want to go back?</p>
+            <div className="modal-buttons">
+              <button
+                className="modal-btn cancel"
+                onClick={() => setShowGuestExitWarning(false)}
+              >
+                Stay
+              </button>
+              <button
+                className="modal-btn confirm"
+                onClick={() => {
+                  setShowGuestExitWarning(false);
+                  onBackToDashboard();
+                }}
+              >
+                Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {sideBarOpen && (
         <div className="overlay" onClick={() => setSidebarOpen(false)} />
@@ -172,13 +240,16 @@ function FormPage({
             {saveStatus === "saved" && (
               <span className="save-status saved">Saved ✓</span>
             )}
-            <button
-              onClick={handleManualSave}
-              disabled={isSaving}
-              className="save-btn"
-            >
-              <FiSave /> Save
-            </button>
+            {!isGuest && (
+              <button
+                onClick={handleManualSave}
+                disabled={isSaving}
+                className="save-btn"
+              >
+                <FiSave /> Save
+              </button>
+            )}
+            {isGuest && <span className="guest-indicator">Guest Mode</span>}
           </div>
         </div>
       </header>
@@ -299,18 +370,35 @@ function FormPage({
         </section>
 
         <div className="submit-container">
-          <button
-            className="submit-btn"
-            onClick={() => handleExportToPDF("detailed")}
-          >
-            Export to PDF (Numbered)
-          </button>
-          <button
-            className="submit-btn"
-            onClick={() => handleExportToPDF("summary")}
-            style={{ marginTop: "10px" }}
-          >
-            Export to PDF (Paragraph)
+          <div className="export-options">
+            <div className="export-option">
+              <label>Format:</label>
+              <select
+                value={exportFormat}
+                onChange={(e) =>
+                  setExportFormat(e.target.value as "detailed" | "summary")
+                }
+              >
+                <option value="detailed">Numbered List</option>
+                <option value="summary">Paragraph Summary</option>
+              </select>
+            </div>
+            <div className="export-option">
+              <label>File Type:</label>
+              <select
+                value={exportFileType}
+                onChange={(e) =>
+                  setExportFileType(e.target.value as "pdf" | "docx" | "txt")
+                }
+              >
+                <option value="pdf">PDF</option>
+                <option value="docx">Word (DOCX)</option>
+                <option value="txt">Text (TXT)</option>
+              </select>
+            </div>
+          </div>
+          <button className="submit-btn" onClick={handleExport}>
+            Export
           </button>
         </div>
       </main>

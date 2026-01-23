@@ -12,6 +12,7 @@ type AppPage = "dashboard" | "survey";
 
 function App() {
   const [user, setUser] = useState<any>(null);
+  const [isGuest, setIsGuest] = useState(false);
   const [authPage, setAuthPage] = useState<AuthPage>("login");
   const [currentPage, setCurrentPage] = useState<AppPage>("dashboard");
   const [loading, setLoading] = useState(true);
@@ -68,7 +69,13 @@ function App() {
   const handleLogout = async () => {
     await signOut();
     setUser(null);
+    setIsGuest(false);
     setCurrentPage("dashboard");
+  };
+
+  const handleGuestLogin = () => {
+    setIsGuest(true);
+    setCurrentPage("survey");
   };
 
   const handleCreateForm = () => {
@@ -108,7 +115,7 @@ function App() {
   }
 
   // Show auth screens if not logged in
-  if (!user) {
+  if (!user && !isGuest) {
     if (authPage === "update-password") {
       return <UpdatePassword onPasswordUpdated={handlePasswordUpdated} />;
     }
@@ -124,6 +131,22 @@ function App() {
       <Login
         onSwitchToSignup={() => setAuthPage("signup")}
         onLoginSuccess={handleLoginSuccess}
+        onGuestLogin={handleGuestLogin}
+      />
+    );
+  }
+
+  // Guest users go directly to form page
+  if (isGuest) {
+    return (
+      <FormPage
+        initialTitle="AAPOR AI Disclosure Checklist"
+        initialData={{}}
+        onBackToDashboard={() => {
+          setIsGuest(false);
+          setCurrentPage("dashboard");
+        }}
+        isGuest={true}
       />
     );
   }

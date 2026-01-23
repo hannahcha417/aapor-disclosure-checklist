@@ -245,7 +245,9 @@ section p {
 
 .submit-container {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
   margin-top: 0rem;
   margin-bottom: 2rem;
 }
@@ -255,12 +257,12 @@ section p {
   color: white;
   border: none;
   border-radius: 8px;
-  padding: 0.75rem 2.5rem;
+  padding: 1rem 1rem;
   font-size: 1.2rem;
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.1s ease;
-  max-width: 250px;
+  max-width: 200px;
 }
 
 .submit-btn:hover {
@@ -278,4 +280,119 @@ section p {
 
 .submit-btn:focus:not(:focus-visible) {
   outline: none;
+}
+
+.guest-indicator {
+  background: #f0f0f0;
+  color: #666;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+}
+
+.modal-content h2 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.modal-content p {
+  margin: 0 0 1rem 0;
+  color: #555;
+  line-height: 1.5;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.modal-btn {
+  flex: 1;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-btn.cancel {
+  background: transparent;
+  color: #667eea;
+  border: 2px solid #667eea;
+}
+
+.modal-btn.cancel:hover {
+  background: #f0f0f0;
+}
+
+.modal-btn.confirm {
+  background: #667eea;
+  color: white;
+  border: none;
+}
+
+.modal-btn.confirm:hover {
+  background: #5a6fd6;
+}
+
+.export-options {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.export-option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.export-option label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.export-option select {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  background: white;
+  color: #333;
+  cursor: pointer;
+  min-width: 150px;
+}
+
+.export-option select:focus {
+  outline: none;
+  border-color: #667eea;
 }

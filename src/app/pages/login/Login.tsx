@@ -5,15 +5,17 @@ import "./Auth.css";
 type LoginProps = {
   onSwitchToSignup: () => void;
   onLoginSuccess: () => void;
+  onGuestLogin: () => void;
 };
 
-function Login({ onSwitchToSignup, onLoginSuccess }: LoginProps) {
+function Login({ onSwitchToSignup, onLoginSuccess, onGuestLogin }: LoginProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetMessage, setResetMessage] = useState("");
+  const [showGuestWarning, setShowGuestWarning] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,6 +112,53 @@ function Login({ onSwitchToSignup, onLoginSuccess }: LoginProps) {
                 Sign up here
               </button>
             </p>
+
+            <div className="guest-divider">
+              <span>or</span>
+            </div>
+
+            <button
+              type="button"
+              className="guest-btn"
+              onClick={() => setShowGuestWarning(true)}
+            >
+              Continue as Guest
+            </button>
+
+            {showGuestWarning && (
+              <div className="modal-overlay">
+                <div className="modal-content">
+                  <h2>Guest Mode Warning</h2>
+                  <p>
+                    Proceeding as a guest will{" "}
+                    <strong>not allow you to save</strong> your progress on the
+                    form (although you can still download a copy of your
+                    responses).
+                  </p>
+                  <p>
+                    We recommend <strong>creating an account</strong> to save
+                    your work and access it later.
+                  </p>
+                  <div className="modal-buttons">
+                    <button
+                      className="modal-btn cancel"
+                      onClick={() => setShowGuestWarning(false)}
+                    >
+                      Go Back
+                    </button>
+                    <button
+                      className="modal-btn confirm"
+                      onClick={() => {
+                        setShowGuestWarning(false);
+                        onGuestLogin();
+                      }}
+                    >
+                      Continue as Guest
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <>
