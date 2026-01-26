@@ -19,10 +19,11 @@ const coreEnhancedCards = cardSections.filter((card) =>
   coreEnhanced.includes(card.id)
 );
 
-// Generate detailed (numbered) content
+// Generate detailed (numbered) content with multi-instance support
 function generateDetailedContent(
   formTitle: string,
   formData: Record<string, any>,
+  instancesData: Record<string, Record<string, any>[]> = {},
   includeEmpty: boolean = true
 ): Paragraph[] {
   const paragraphs: Paragraph[] = [];
@@ -37,9 +38,17 @@ function generateDetailedContent(
   );
 
   const renderCard = (card: CardData) => {
-    // Check if card has any answers
-    const hasAnswers = card.questions.some((q) => formData[q.id]?.trim());
-    if (!includeEmpty && !hasAnswers) return;
+    // Get instances for this card, or fallback to formData
+    const instances =
+      instancesData[card.id] && instancesData[card.id].length > 0
+        ? instancesData[card.id]
+        : [formData];
+
+    // Check if any instance has answers
+    const hasAnyAnswers = instances.some((instance) =>
+      card.questions.some((q) => instance[q.id]?.trim())
+    );
+    if (!includeEmpty && !hasAnyAnswers) return;
 
     // Card title
     paragraphs.push(
@@ -50,51 +59,61 @@ function generateDetailedContent(
       })
     );
 
-    card.questions.forEach((question, index) => {
-      const answer = formData[question.id];
+    instances.forEach((instance, instanceIndex) => {
+      // Check if this instance has any answers
+      const hasAnswers = card.questions.some((q) => instance[q.id]?.trim());
+      if (!includeEmpty && !hasAnswers) return;
 
-      // Skip unanswered questions if includeEmpty is false
-      if (!includeEmpty && !answer?.trim()) return;
-
-      // Apply the same numbering logic as ExpandableCard
-      let questionNumber: string | number;
-      if (question.id === "q9") {
-        questionNumber = "4a";
-      } else if (["q10", "q11", "q12"].includes(question.id)) {
-        questionNumber = index;
-      } else {
-        questionNumber = index + 1;
+      // Instance label if multiple instances
+      if (instances.length > 1) {
+        paragraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `AI Tool ${instanceIndex + 1}`,
+                bold: true,
+                color: "555555",
+              }),
+            ],
+            spacing: { before: 200, after: 100 },
+          })
+        );
       }
 
-      // Question
-      paragraphs.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: `${questionNumber}. ${question.label}${
-                question.required ? " *" : ""
-              }`,
-              bold: true,
-            }),
-          ],
-          spacing: { before: 150 },
-        })
-      );
+      card.questions.forEach((question) => {
+        const answer = instance[question.id];
 
-      // Answer
-      paragraphs.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: answer || "Not answered",
-              italics: !answer,
-              color: answer ? "000000" : "999999",
-            }),
-          ],
-          indent: { left: 400 },
-          spacing: { after: 100 },
-        })
-      );
+        // Skip unanswered questions if includeEmpty is false
+        if (!includeEmpty && !answer?.trim()) return;
+
+        // Question
+        paragraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `${question.label}${question.required ? " *" : ""}`,
+                bold: true,
+              }),
+            ],
+            spacing: { before: 150 },
+          })
+        );
+
+        // Answer
+        paragraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: answer || "Not answered",
+                italics: !answer,
+                color: answer ? "000000" : "999999",
+              }),
+            ],
+            indent: { left: 400 },
+            spacing: { after: 100 },
+          })
+        );
+      });
     });
   };
 
@@ -121,10 +140,11 @@ function generateDetailedContent(
   return paragraphs;
 }
 
-// Generate summary (paragraph) content
+// Generate summary (paragraph) content with multi-instance support
 function generateSummaryContent(
   formTitle: string,
   formData: Record<string, any>,
+  instancesData: Record<string, Record<string, any>[]> = {},
   includeEmpty: boolean = true
 ): Paragraph[] {
   const paragraphs: Paragraph[] = [];
@@ -139,13 +159,19 @@ function generateSummaryContent(
   );
 
   const renderCardSummary = (card: CardData) => {
-    // Collect all non-empty answers
-    const answers = card.questions
-      .map((question) => formData[question.id])
-      .filter((answer) => answer && answer.trim());
+    // Get instances for this card, or fallback to formData
+    const instances =
+      instancesData[card.id] && instancesData[card.id].length > 0
+        ? instancesData[card.id]
+        : [formData];
+
+    // Check if any instance has answers
+    const hasAnyAnswers = instances.some((instance) =>
+      card.questions.some((q) => instance[q.id]?.trim())
+    );
 
     // Skip card if no answers and includeEmpty is false
-    if (!includeEmpty && answers.length === 0) return;
+    if (!includeEmpty && !hasAnyAnswers) return;
 
     // Card title
     paragraphs.push(
@@ -156,27 +182,53 @@ function generateSummaryContent(
       })
     );
 
-    if (answers.length > 0) {
-      paragraphs.push(
-        new Paragraph({
-          text: answers.join(" "),
-          spacing: { after: 200 },
-        })
-      );
-    } else {
-      paragraphs.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: "No answer",
-              italics: true,
-              color: "999999",
-            }),
-          ],
-          spacing: { after: 200 },
-        })
-      );
-    }
+    instances.forEach((instance, instanceIndex) => {
+      // Collect all non-empty answers for this instance
+      const answers = card.questions
+        .map((question) => instance[question.id])
+        .filter((answer) => answer && answer.trim());
+
+      // Skip this instance if no answers and includeEmpty is false
+      if (!includeEmpty && answers.length === 0) return;
+
+      // Instance label if multiple instances
+      if (instances.length > 1) {
+        paragraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `AI Tool ${instanceIndex + 1}:`,
+                bold: true,
+                color: "555555",
+              }),
+            ],
+            spacing: { before: 150, after: 50 },
+          })
+        );
+      }
+
+      if (answers.length > 0) {
+        paragraphs.push(
+          new Paragraph({
+            text: answers.join(" "),
+            spacing: { after: 200 },
+          })
+        );
+      } else {
+        paragraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "No answer",
+                italics: true,
+                color: "999999",
+              }),
+            ],
+            spacing: { after: 200 },
+          })
+        );
+      }
+    });
   };
 
   // Immediate Disclosures
@@ -205,13 +257,19 @@ function generateSummaryContent(
 export async function generateDocx(
   formTitle: string,
   formData: Record<string, any>,
+  instancesData: Record<string, Record<string, any>[]> = {},
   format: "detailed" | "summary",
   includeEmpty: boolean = true
 ): Promise<Blob> {
   const paragraphs =
     format === "summary"
-      ? generateSummaryContent(formTitle, formData, includeEmpty)
-      : generateDetailedContent(formTitle, formData, includeEmpty);
+      ? generateSummaryContent(formTitle, formData, instancesData, includeEmpty)
+      : generateDetailedContent(
+          formTitle,
+          formData,
+          instancesData,
+          includeEmpty
+        );
 
   const doc = new Document({
     sections: [
@@ -227,40 +285,49 @@ export async function generateDocx(
   });
 }
 
-// Generate detailed (numbered) text content
+// Generate detailed (numbered) text content with multi-instance support
 function generateDetailedText(
   formTitle: string,
   formData: Record<string, any>,
+  instancesData: Record<string, Record<string, any>[]> = {},
   includeEmpty: boolean = true
 ): string {
   let text = `${formTitle}\n${"=".repeat(formTitle.length)}\n\n`;
 
   const renderCard = (card: CardData) => {
-    // Check if card has any answers
-    const hasAnswers = card.questions.some((q) => formData[q.id]?.trim());
-    if (!includeEmpty && !hasAnswers) return;
+    // Get instances for this card, or fallback to formData
+    const instances =
+      instancesData[card.id] && instancesData[card.id].length > 0
+        ? instancesData[card.id]
+        : [formData];
+
+    // Check if any instance has answers
+    const hasAnyAnswers = instances.some((instance) =>
+      card.questions.some((q) => instance[q.id]?.trim())
+    );
+    if (!includeEmpty && !hasAnyAnswers) return;
 
     text += `\n${card.title}\n${"-".repeat(card.title.length)}\n`;
 
-    card.questions.forEach((question, index) => {
-      const answer = formData[question.id];
+    instances.forEach((instance, instanceIndex) => {
+      // Check if this instance has any answers
+      const hasAnswers = card.questions.some((q) => instance[q.id]?.trim());
+      if (!includeEmpty && !hasAnswers) return;
 
-      // Skip unanswered questions if includeEmpty is false
-      if (!includeEmpty && !answer?.trim()) return;
-
-      let questionNumber: string | number;
-      if (question.id === "q9") {
-        questionNumber = "4a";
-      } else if (["q10", "q11", "q12"].includes(question.id)) {
-        questionNumber = index;
-      } else {
-        questionNumber = index + 1;
+      // Instance label if multiple instances
+      if (instances.length > 1) {
+        text += `\n[AI Tool ${instanceIndex + 1}]\n`;
       }
 
-      text += `\n${questionNumber}. ${question.label}${
-        question.required ? " *" : ""
-      }\n`;
-      text += `   ${answer || "Not answered"}\n`;
+      card.questions.forEach((question) => {
+        const answer = instance[question.id];
+
+        // Skip unanswered questions if includeEmpty is false
+        if (!includeEmpty && !answer?.trim()) return;
+
+        text += `\n${question.label}${question.required ? " *" : ""}\n`;
+        text += `   ${answer || "Not answered"}\n`;
+      });
     });
   };
 
@@ -273,29 +340,51 @@ function generateDetailedText(
   return text;
 }
 
-// Generate summary (paragraph) text content
+// Generate summary (paragraph) text content with multi-instance support
 function generateSummaryText(
   formTitle: string,
   formData: Record<string, any>,
+  instancesData: Record<string, Record<string, any>[]> = {},
   includeEmpty: boolean = true
 ): string {
   let text = `${formTitle}\n${"=".repeat(formTitle.length)}\n\n`;
 
   const renderCardSummary = (card: CardData) => {
-    const answers = card.questions
-      .map((question) => formData[question.id])
-      .filter((answer) => answer && answer.trim());
+    // Get instances for this card, or fallback to formData
+    const instances =
+      instancesData[card.id] && instancesData[card.id].length > 0
+        ? instancesData[card.id]
+        : [formData];
+
+    // Check if any instance has answers
+    const hasAnyAnswers = instances.some((instance) =>
+      card.questions.some((q) => instance[q.id]?.trim())
+    );
 
     // Skip card if no answers and includeEmpty is false
-    if (!includeEmpty && answers.length === 0) return;
+    if (!includeEmpty && !hasAnyAnswers) return;
 
     text += `\n${card.title}\n${"-".repeat(card.title.length)}\n`;
 
-    if (answers.length > 0) {
-      text += answers.join(" ") + "\n";
-    } else {
-      text += "No answer\n";
-    }
+    instances.forEach((instance, instanceIndex) => {
+      const answers = card.questions
+        .map((question) => instance[question.id])
+        .filter((answer) => answer && answer.trim());
+
+      // Skip this instance if no answers and includeEmpty is false
+      if (!includeEmpty && answers.length === 0) return;
+
+      // Instance label if multiple instances
+      if (instances.length > 1) {
+        text += `\n[AI Tool ${instanceIndex + 1}]\n`;
+      }
+
+      if (answers.length > 0) {
+        text += answers.join(" ") + "\n";
+      } else {
+        text += "No answer\n";
+      }
+    });
   };
 
   text += "\nIMMEDIATE DISCLOSURES\n" + "=".repeat(21) + "\n";
@@ -310,13 +399,14 @@ function generateSummaryText(
 export function generateTxt(
   formTitle: string,
   formData: Record<string, any>,
+  instancesData: Record<string, Record<string, any>[]> = {},
   format: "detailed" | "summary",
   includeEmpty: boolean = true
 ): Blob {
   const content =
     format === "summary"
-      ? generateSummaryText(formTitle, formData, includeEmpty)
-      : generateDetailedText(formTitle, formData, includeEmpty);
+      ? generateSummaryText(formTitle, formData, instancesData, includeEmpty)
+      : generateDetailedText(formTitle, formData, instancesData, includeEmpty);
 
   return new Blob([content], { type: "text/plain;charset=utf-8" });
 }

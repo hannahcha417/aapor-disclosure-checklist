@@ -271,3 +271,67 @@
 .option-button:focus:not(:focus-visible) {
   outline: none;
 }
+
+/* Multi-instance styling */
+.card-instance {
+  background: #fafafa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.card-instance:first-of-type {
+  margin-top: 0.5rem;
+}
+
+.instance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.instance-label {
+  font-weight: 600;
+  color: #667eea;
+  font-size: 1rem;
+}
+
+.remove-instance-btn {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.remove-instance-btn:hover {
+  background: #fee;
+  color: #c33;
+}
+
+.add-instance-btn {
+  display: block;
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  background: transparent;
+  border: 2px dashed #667eea;
+  border-radius: 8px;
+  color: #667eea;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-instance-btn:hover {
+  background: #f0f0ff;
+  border-color: #5a6fd6;
+}

@@ -6,6 +6,9 @@ type ExpandableCardProps = {
   card: CardData;
   initialData?: Record<string, any>;
   onDataChange?: (questionId: string, value: any) => void;
+  // Multi-instance support
+  instances?: Record<string, any>[];
+  onInstancesChange?: (instances: Record<string, any>[]) => void;
 };
 
 // Character limit for summary truncation
@@ -15,21 +18,38 @@ function ExpandableCard({
   card,
   initialData,
   onDataChange,
+  instances: externalInstances,
+  onInstancesChange,
 }: ExpandableCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [summaryExpanded, setSummaryExpanded] = useState(false);
-  const [textareaValues, setTextareaValues] = useState<Record<string, string>>(
-    {}
-  );
-  const [inputValues, setInputValues] = useState<Record<string, string>>({});
 
-  // Load initial data when provided
-  useEffect(() => {
-    if (initialData) {
-      setTextareaValues((prev) => ({ ...prev, ...initialData }));
-      setInputValues((prev) => ({ ...prev, ...initialData }));
+  // Multi-instance state - array of instances, each with their own answers
+  const [instances, setInstances] = useState<Record<string, string>[]>(() => {
+    if (externalInstances && externalInstances.length > 0) {
+      return externalInstances;
     }
-  }, [initialData]);
+    // Initialize with one instance containing initialData
+    return [initialData || {}];
+  });
+
+  // Sync with external instances
+  useEffect(() => {
+    if (externalInstances && externalInstances.length > 0) {
+      setInstances(externalInstances);
+    }
+  }, [externalInstances]);
+
+  // Load initial data when provided (for backward compatibility)
+  useEffect(() => {
+    if (initialData && !externalInstances) {
+      setInstances((prev) => {
+        const newInstances = [...prev];
+        newInstances[0] = { ...newInstances[0], ...initialData };
+        return newInstances;
+      });
+    }
+  }, [initialData, externalInstances]);
 
   const isTruncated = card.summary.length > CHAR_LIMIT;
   const displaySummary =
@@ -37,46 +57,52 @@ function ExpandableCard({
       ? card.summary
       : card.summary.slice(0, CHAR_LIMIT) + "...";
 
-  // Check if any required question is incomplete (has no value)
-  const hasIncompleteQuestions = card.questions.some((question) => {
-    if (!question.required) return false;
-    const value =
-      question.type === "textarea"
-        ? textareaValues[question.id]
-        : inputValues[question.id];
-    return !value || value.trim() === "";
-  });
+  // Check if any required question is incomplete across all instances
+  const hasIncompleteQuestions = instances.some((instance) =>
+    card.questions.some((question) => {
+      if (!question.required) return false;
+      const value = instance[question.id];
+      return !value || value.trim() === "";
+    })
+  );
 
-  const handleTextareaChange = (
-    e: React.ChangeEvent<HTMLTextAreaElement>,
-    questionId: string
+  const handleValueChange = (
+    instanceIndex: number,
+    questionId: string,
+    value: string
   ) => {
-    const textarea = e.currentTarget;
-    textarea.style.height = "auto";
-    textarea.style.height = textarea.scrollHeight + "px";
-
-    const value = textarea.value;
-    setTextareaValues((prev) => ({
-      ...prev,
+    const newInstances = [...instances];
+    newInstances[instanceIndex] = {
+      ...newInstances[instanceIndex],
       [questionId]: value,
-    }));
+    };
+    setInstances(newInstances);
 
-    // Notify parent component of data change
-    onDataChange?.(questionId, value);
+    // Notify parent of changes
+    if (onInstancesChange) {
+      onInstancesChange(newInstances);
+    }
+    // Backward compatibility: also call onDataChange for first instance
+    if (instanceIndex === 0 && onDataChange) {
+      onDataChange(questionId, value);
+    }
   };
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    questionId: string
-  ) => {
-    const value = e.target.value;
-    setInputValues((prev) => ({
-      ...prev,
-      [questionId]: value,
-    }));
+  const addInstance = () => {
+    const newInstances = [...instances, {}];
+    setInstances(newInstances);
+    if (onInstancesChange) {
+      onInstancesChange(newInstances);
+    }
+  };
 
-    // Notify parent component of data change
-    onDataChange?.(questionId, value);
+  const removeInstance = (index: number) => {
+    if (instances.length <= 1) return;
+    const newInstances = instances.filter((_, i) => i !== index);
+    setInstances(newInstances);
+    if (onInstancesChange) {
+      onInstancesChange(newInstances);
+    }
   };
 
   const toggleExpanded = () => {
@@ -84,6 +110,109 @@ function ExpandableCard({
       setSummaryExpanded(false);
     }
     setExpanded(!expanded);
+  };
+
+  const renderInstance = (
+    instance: Record<string, string>,
+    instanceIndex: number
+  ) => {
+    return (
+      <div key={instanceIndex} className="card-instance">
+        {instances.length > 1 && (
+          <div className="instance-header">
+            <span className="instance-label">AI Tool {instanceIndex + 1}</span>
+            <button
+              type="button"
+              className="remove-instance-btn"
+              onClick={() => removeInstance(instanceIndex)}
+              aria-label="Remove this instance"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+        {card.questions.map((question, qIndex) => {
+          // Conditionally render question 9 only if question 8 is "Yes"
+          if (question.id === "q9" && instance["q8"] !== "Yes") {
+            return null;
+          }
+
+          // Display conditional questions with letter suffix (e.g., "4a")
+          let questionNumber: string | number;
+          if (question.id === "q9") {
+            questionNumber = "4a";
+          } else if (["q10", "q11", "q12"].includes(question.id)) {
+            questionNumber = qIndex;
+          } else {
+            questionNumber = qIndex + 1;
+          }
+
+          return (
+            <label key={question.id}>
+              <div style={{ marginBottom: "0.5rem" }}>
+                <span className="question-label">
+                  {questionNumber}. {question.label}
+                  {question.required && <span className="red">*</span>}
+                </span>
+                {question.tooltip && question.tooltip.trim() && (
+                  <span className="tooltip-container">
+                    <span className="tooltip-icon">?</span>
+                    <span className="tooltip-text">{question.tooltip}</span>
+                  </span>
+                )}
+              </div>
+              {question.type === "radio" && question.options ? (
+                <div className="button-group">
+                  {question.options.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      className={`option-button ${
+                        instance[question.id] === option ? "selected" : ""
+                      }`}
+                      onClick={() =>
+                        handleValueChange(instanceIndex, question.id, option)
+                      }
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              ) : question.type === "textarea" ? (
+                <textarea
+                  placeholder={question.placeholder}
+                  value={instance[question.id] || ""}
+                  onChange={(e) => {
+                    const textarea = e.currentTarget;
+                    textarea.style.height = "auto";
+                    textarea.style.height = textarea.scrollHeight + "px";
+                    handleValueChange(
+                      instanceIndex,
+                      question.id,
+                      e.target.value
+                    );
+                  }}
+                  rows={1}
+                />
+              ) : (
+                <input
+                  type="text"
+                  placeholder={question.placeholder}
+                  value={instance[question.id] || ""}
+                  onChange={(e) =>
+                    handleValueChange(
+                      instanceIndex,
+                      question.id,
+                      e.target.value
+                    )
+                  }
+                />
+              )}
+            </label>
+          );
+        })}
+      </div>
+    );
   };
 
   return (
@@ -124,76 +253,16 @@ function ExpandableCard({
               )}
             </p>
           </div>
-          {card.questions.map((question, index) => {
-            // Conditionally render question 9 only if question 8 is "Yes"
-            if (question.id === "q9" && inputValues["q8"] !== "Yes") {
-              return null;
-            }
 
-            // Display conditional questions with letter suffix (e.g., "4a")
-            let questionNumber;
-            if (question.id === "q9") {
-              questionNumber = "4a";
-            } else if (["q10", "q11", "q12"].includes(question.id)) {
-              questionNumber = index;
-            } else {
-              questionNumber = index + 1;
-            }
+          {instances.map((instance, index) => renderInstance(instance, index))}
 
-            return (
-              <label key={question.id}>
-                <div style={{ marginBottom: "0.5rem" }}>
-                  <span className="question-label">
-                    {questionNumber}. {question.label}
-                    {question.required && <span className="red">*</span>}
-                  </span>
-                  {question.tooltip && question.tooltip.trim() && (
-                    <span className="tooltip-container">
-                      <span className="tooltip-icon">?</span>
-                      <span className="tooltip-text">{question.tooltip}</span>
-                    </span>
-                  )}
-                </div>
-                {question.type === "radio" && question.options ? (
-                  <div className="button-group">
-                    {question.options.map((option) => (
-                      <button
-                        key={option}
-                        type="button"
-                        className={`option-button ${
-                          inputValues[question.id] === option ? "selected" : ""
-                        }`}
-                        onClick={() => {
-                          setInputValues((prev) => ({
-                            ...prev,
-                            [question.id]: option,
-                          }));
-                          // Notify parent component of data change
-                          onDataChange?.(question.id, option);
-                        }}
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
-                ) : question.type === "textarea" ? (
-                  <textarea
-                    placeholder={question.placeholder}
-                    value={textareaValues[question.id] || ""}
-                    onChange={(e) => handleTextareaChange(e, question.id)}
-                    rows={1}
-                  />
-                ) : (
-                  <input
-                    type="text"
-                    placeholder={question.placeholder}
-                    value={inputValues[question.id] || ""}
-                    onChange={(e) => handleInputChange(e, question.id)}
-                  />
-                )}
-              </label>
-            );
-          })}
+          <button
+            type="button"
+            className="add-instance-btn"
+            onClick={addInstance}
+          >
+            + Add Another AI Tool or Use Case
+          </button>
         </div>
       )}
     </div>

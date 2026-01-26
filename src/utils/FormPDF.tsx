@@ -26,6 +26,15 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#736be7",
   },
+  instanceLabel: {
+    fontSize: 11,
+    marginTop: 10,
+    marginBottom: 6,
+    fontWeight: "bold",
+    color: "#555",
+    backgroundColor: "#f5f5f5",
+    padding: 4,
+  },
   cardSummary: {
     fontSize: 9,
     marginBottom: 10,
@@ -57,12 +66,14 @@ const styles = StyleSheet.create({
 type FormPDFProps = {
   formTitle: string;
   formData: Record<string, any>;
+  instancesData?: Record<string, Record<string, any>[]>;
   includeEmpty?: boolean;
 };
 
 export const FormPDF = ({
   formTitle,
   formData,
+  instancesData = {},
   includeEmpty = true,
 }: FormPDFProps) => {
   // Group cards by section
@@ -75,35 +86,31 @@ export const FormPDF = ({
     "human-respondents-disclosure",
   ];
 
-  const renderCard = (card: CardData) => {
-    // Check if card has any answers
-    const hasAnswers = card.questions.some((q) => formData[q.id]?.trim());
+  const renderInstance = (
+    card: CardData,
+    instance: Record<string, any>,
+    instanceIndex: number,
+    totalInstances: number
+  ) => {
+    // Check if this instance has any answers
+    const hasAnswers = card.questions.some((q) => instance[q.id]?.trim());
     if (!includeEmpty && !hasAnswers) return null;
 
     return (
-      <View key={card.id}>
-        <Text style={styles.cardTitle}>{card.title}</Text>
-
-        {card.questions.map((question, index) => {
-          const answer = formData[question.id];
+      <View key={instanceIndex}>
+        {totalInstances > 1 && (
+          <Text style={styles.instanceLabel}>AI Tool {instanceIndex + 1}</Text>
+        )}
+        {card.questions.map((question) => {
+          const answer = instance[question.id];
 
           // Skip unanswered questions if includeEmpty is false
           if (!includeEmpty && !answer?.trim()) return null;
 
-          // Apply the same numbering logic as ExpandableCard
-          let questionNumber: string | number;
-          if (question.id === "q9") {
-            questionNumber = "4a";
-          } else if (["q10", "q11", "q12"].includes(question.id)) {
-            questionNumber = index;
-          } else {
-            questionNumber = index + 1;
-          }
-
           return (
-            <View key={question.id}>
+            <View key={`${instanceIndex}-${question.id}`}>
               <Text style={styles.questionLabel}>
-                {questionNumber}. {question.label}
+                {question.label}
                 {question.required && " *"}
               </Text>
               {answer ? (
@@ -114,6 +121,29 @@ export const FormPDF = ({
             </View>
           );
         })}
+      </View>
+    );
+  };
+
+  const renderCard = (card: CardData) => {
+    // Get instances for this card, or fallback to formData
+    const instances =
+      instancesData[card.id] && instancesData[card.id].length > 0
+        ? instancesData[card.id]
+        : [formData];
+
+    // Check if any instance has answers
+    const hasAnyAnswers = instances.some((instance) =>
+      card.questions.some((q) => instance[q.id]?.trim())
+    );
+    if (!includeEmpty && !hasAnyAnswers) return null;
+
+    return (
+      <View key={card.id}>
+        <Text style={styles.cardTitle}>{card.title}</Text>
+        {instances.map((instance, idx) =>
+          renderInstance(card, instance, idx, instances.length)
+        )}
       </View>
     );
   };

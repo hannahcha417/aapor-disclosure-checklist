@@ -35,6 +35,10 @@ function FormPage({
   const [formData, setFormData] = useState<Record<string, any>>(
     initialData || {}
   );
+  // Multi-instance data: { cardId: [instance1, instance2, ...] }
+  const [instancesData, setInstancesData] = useState<
+    Record<string, Record<string, any>[]>
+  >(initialData?.instances || {});
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "">("");
   const [instructionsExpanded, setInstructionsExpanded] = useState(true);
@@ -61,13 +65,16 @@ function FormPage({
       setIsSaving(true);
       setSaveStatus("saving");
 
+      // Combine formData with instances data for saving
+      const dataToSave = { ...formData, instances: instancesData };
+
       try {
         if (formId) {
           // Update existing form
-          await updateForm(formId, formTitle, formData);
+          await updateForm(formId, formTitle, dataToSave);
         } else {
           // Create new form
-          const { data, error } = await createForm(formTitle, formData);
+          const { data, error } = await createForm(formTitle, dataToSave);
           if (data && !error) {
             setFormId(data.id);
           }
@@ -95,7 +102,7 @@ function FormPage({
         clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [formTitle, formData, formId, isGuest]);
+  }, [formTitle, formData, instancesData, formId, isGuest]);
 
   const handleManualSave = async () => {
     if (!formTitle.trim()) return;
@@ -103,11 +110,14 @@ function FormPage({
     setIsSaving(true);
     setSaveStatus("saving");
 
+    // Combine formData with instances data for saving
+    const dataToSave = { ...formData, instances: instancesData };
+
     try {
       if (formId) {
-        await updateForm(formId, formTitle, formData);
+        await updateForm(formId, formTitle, dataToSave);
       } else {
-        const { data, error } = await createForm(formTitle, formData);
+        const { data, error } = await createForm(formTitle, dataToSave);
         if (data && !error) {
           setFormId(data.id);
         }
@@ -121,6 +131,17 @@ function FormPage({
     }
   };
 
+  // Handler for instances changes from ExpandableCard
+  const handleInstancesChange = (
+    cardId: string,
+    instances: Record<string, any>[]
+  ) => {
+    setInstancesData((prev) => ({
+      ...prev,
+      [cardId]: instances,
+    }));
+  };
+
   const handleExport = async () => {
     try {
       const suffix = exportFormat === "summary" ? "_summary" : "";
@@ -132,12 +153,14 @@ function FormPage({
             <FormPDFSummary
               formTitle={formTitle}
               formData={formData}
+              instancesData={instancesData}
               includeEmpty={includeEmpty}
             />
           ) : (
             <FormPDF
               formTitle={formTitle}
               formData={formData}
+              instancesData={instancesData}
               includeEmpty={includeEmpty}
             />
           );
@@ -147,6 +170,7 @@ function FormPage({
         const blob = await generateDocx(
           formTitle,
           formData,
+          instancesData,
           exportFormat,
           includeEmpty
         );
@@ -163,6 +187,7 @@ function FormPage({
         const blob = generateTxt(
           formTitle,
           formData,
+          instancesData,
           exportFormat,
           includeEmpty
         );
@@ -314,8 +339,12 @@ function FormPage({
             <ExpandableCard
               card={getCardById("tasks-performed")!}
               initialData={formData}
+              instances={instancesData["tasks-performed"]}
               onDataChange={(questionId, value) =>
                 setFormData((prev) => ({ ...prev, [questionId]: value }))
+              }
+              onInstancesChange={(instances) =>
+                handleInstancesChange("tasks-performed", instances)
               }
             />
           )}
@@ -323,8 +352,12 @@ function FormPage({
             <ExpandableCard
               card={getCardById("human-oversight")!}
               initialData={formData}
+              instances={instancesData["human-oversight"]}
               onDataChange={(questionId, value) =>
                 setFormData((prev) => ({ ...prev, [questionId]: value }))
+              }
+              onInstancesChange={(instances) =>
+                handleInstancesChange("human-oversight", instances)
               }
             />
           )}
@@ -345,8 +378,12 @@ function FormPage({
             <ExpandableCard
               card={getCardById("model-details")!}
               initialData={formData}
+              instances={instancesData["model-details"]}
               onDataChange={(questionId, value) =>
                 setFormData((prev) => ({ ...prev, [questionId]: value }))
+              }
+              onInstancesChange={(instances) =>
+                handleInstancesChange("model-details", instances)
               }
             />
           )}
@@ -354,8 +391,12 @@ function FormPage({
             <ExpandableCard
               card={getCardById("access-tooling-details")!}
               initialData={formData}
+              instances={instancesData["access-tooling-details"]}
               onDataChange={(questionId, value) =>
                 setFormData((prev) => ({ ...prev, [questionId]: value }))
+              }
+              onInstancesChange={(instances) =>
+                handleInstancesChange("access-tooling-details", instances)
               }
             />
           )}
@@ -363,8 +404,12 @@ function FormPage({
             <ExpandableCard
               card={getCardById("core-prompts")!}
               initialData={formData}
+              instances={instancesData["core-prompts"]}
               onDataChange={(questionId, value) =>
                 setFormData((prev) => ({ ...prev, [questionId]: value }))
+              }
+              onInstancesChange={(instances) =>
+                handleInstancesChange("core-prompts", instances)
               }
             />
           )}
@@ -372,8 +417,15 @@ function FormPage({
             <ExpandableCard
               card={getCardById("additional-enhanced-disclosures")!}
               initialData={formData}
+              instances={instancesData["additional-enhanced-disclosures"]}
               onDataChange={(questionId, value) =>
                 setFormData((prev) => ({ ...prev, [questionId]: value }))
+              }
+              onInstancesChange={(instances) =>
+                handleInstancesChange(
+                  "additional-enhanced-disclosures",
+                  instances
+                )
               }
             />
           )}
@@ -381,8 +433,12 @@ function FormPage({
             <ExpandableCard
               card={getCardById("human-respondents-disclosure")!}
               initialData={formData}
+              instances={instancesData["human-respondents-disclosure"]}
               onDataChange={(questionId, value) =>
                 setFormData((prev) => ({ ...prev, [questionId]: value }))
+              }
+              onInstancesChange={(instances) =>
+                handleInstancesChange("human-respondents-disclosure", instances)
               }
             />
           )}
@@ -398,7 +454,7 @@ function FormPage({
                   setExportFormat(e.target.value as "detailed" | "summary")
                 }
               >
-                <option value="detailed">Numbered List</option>
+                <option value="detailed">List</option>
                 <option value="summary">Paragraph Summary</option>
               </select>
             </div>

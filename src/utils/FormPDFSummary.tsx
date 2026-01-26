@@ -26,6 +26,13 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#736be7",
   },
+  instanceLabel: {
+    fontSize: 11,
+    marginTop: 6,
+    marginBottom: 4,
+    fontWeight: "bold",
+    color: "#555",
+  },
   summaryParagraph: {
     fontSize: 10,
     marginBottom: 12,
@@ -44,12 +51,14 @@ const styles = StyleSheet.create({
 type FormPDFSummaryProps = {
   formTitle: string;
   formData: Record<string, any>;
+  instancesData?: Record<string, Record<string, any>[]>;
   includeEmpty?: boolean;
 };
 
 export const FormPDFSummary = ({
   formTitle,
   formData,
+  instancesData = {},
   includeEmpty = true,
 }: FormPDFSummaryProps) => {
   // Group cards by section
@@ -63,22 +72,45 @@ export const FormPDFSummary = ({
   ];
 
   const renderCardSummary = (card: CardData) => {
-    // Collect all non-empty answers
-    const answers = card.questions
-      .map((question) => formData[question.id])
-      .filter((answer) => answer && answer.trim());
+    // Get instances for this card, or fallback to formData
+    const instances =
+      instancesData[card.id] && instancesData[card.id].length > 0
+        ? instancesData[card.id]
+        : [formData];
+
+    // Check if any instance has answers
+    const hasAnyAnswers = instances.some((instance) =>
+      card.questions.some((q) => instance[q.id]?.trim())
+    );
 
     // Skip card if no answers and includeEmpty is false
-    if (!includeEmpty && answers.length === 0) return null;
+    if (!includeEmpty && !hasAnyAnswers) return null;
 
     return (
       <View key={card.id}>
         <Text style={styles.cardTitle}>{card.title}</Text>
-        {answers.length > 0 ? (
-          <Text style={styles.summaryParagraph}>{answers.join(" ")}</Text>
-        ) : (
-          <Text style={styles.noAnswer}>No answer</Text>
-        )}
+        {instances.map((instance, idx) => {
+          // Collect all non-empty answers for this instance
+          const answers = card.questions
+            .map((question) => instance[question.id])
+            .filter((answer) => answer && answer.trim());
+
+          // Skip this instance if no answers and includeEmpty is false
+          if (!includeEmpty && answers.length === 0) return null;
+
+          return (
+            <View key={idx}>
+              {instances.length > 1 && (
+                <Text style={styles.instanceLabel}>AI Tool {idx + 1}:</Text>
+              )}
+              {answers.length > 0 ? (
+                <Text style={styles.summaryParagraph}>{answers.join(" ")}</Text>
+              ) : (
+                <Text style={styles.noAnswer}>No answer</Text>
+              )}
+            </View>
+          );
+        })}
       </View>
     );
   };
