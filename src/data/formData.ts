@@ -18,7 +18,7 @@ export interface CardData {
 export const cardSections: CardData[] = [
   {
     id: "tasks-performed",
-    title: "Tasks Performed by AI",
+    title: "1. Tasks Performed by AI",
     summary:
       "Documenting what the AI did and why it was used is essential because different tasks introduce different risks. For example, if AI generated survey questions, bias could enter through wording choices influenced by training data. If AI cleaned data, errors might arise from misclassification or assumptions embedded in algorithms. Knowing the task helps readers assess where automation might affect validity.",
     questions: [
@@ -44,7 +44,7 @@ export const cardSections: CardData[] = [
   },
   {
     id: "human-oversight",
-    title: "Human Oversight or Validation",
+    title: "2. Human Oversight or Validation",
     summary:
       "Human review is a critical safeguard against AI-driven errors. Disclosing when and how oversight occurred shows whether potential mistakes—such as misinterpretation of responses or biased coding—were caught. Enhanced details (e.g., double-blind checks or statistical validation) indicate the rigor of error control. Without this, consumers cannot judge whether AI outputs were trusted blindly or verified systematically. What needs to be verified and how will evolve over time with model, infrastructure, and research into their validity.",
     questions: [
@@ -71,7 +71,7 @@ export const cardSections: CardData[] = [
   },
   {
     id: "model-details",
-    title: " Model Details",
+    title: "4. Model Details",
     summary:
       "The model’s identity, version, and fine-tuning status matter because different models have different capabilities and biases. Proprietary models may lack transparency about training data, while open-source models might allow scrutiny. Custom configurations like temperature affect creativity and precision, influencing question phrasing or response generation. Reporting these settings helps explain variability and potential systematic bias in outputs.",
     questions: [
@@ -147,7 +147,7 @@ export const cardSections: CardData[] = [
   },
   {
     id: "access-tooling-details",
-    title: " Access/Tooling Details",
+    title: "5. Access/Tooling Details",
     summary:
       "How the AI was accessed (API vs. embedded tool) and the interface used can affect consistency and control. For instance, an interviewer bot embedded in a survey platform might introduce conversational bias differently than a static API call. Understanding the tooling context helps identify sources of error related to interaction design or technical constraints.",
     questions: [
@@ -173,7 +173,7 @@ export const cardSections: CardData[] = [
   },
   {
     id: "core-prompts",
-    title: "Core Prompts or Instructions",
+    title: "6. Core Prompts or Instructions",
     summary:
       "Prompts shape AI behavior. If instructions were vague or biased, outputs may reflect those biases. Exact prompts and system-wide instructions allow others to evaluate whether wording or framing introduced systematic error. For example, a prompt emphasizing “concise answers” might truncate nuanced responses, affecting data quality",
     questions: [
@@ -208,7 +208,7 @@ export const cardSections: CardData[] = [
   },
   {
     id: "additional-enhanced-disclosures",
-    title: "Additional Enhanced Disclosures",
+    title: "7. Additional Enhanced Disclosures",
     summary:
       "Code reveals whether automation introduced errors through implementation choices. For AI as interviewer, variability in questions can lead to measurement error, and documenting this helps assess comparability. For memory, stateful systems may carry context across interactions, introducing bias if prior responses influence later ones. Known biases help explicitly acknowledging biases (e.g. language or cultural skew), helping readers interpret findings cautiously.",
     questions: [
@@ -269,7 +269,7 @@ export const cardSections: CardData[] = [
   },
   {
     id: "human-respondents-disclosure",
-    title: "Human Respondents Disclosure",
+    title: "3. Human Respondents Disclosure",
     summary:
       "Do NOT report: The number of AI instances used for any task, as this figure is often ambiguous, non-independent, and requires excessive context to interpret meaningfully. Reporting the number of human respondents clarifies the scale of human input versus automation. This matters because human validation often mitigates AI error. Not reporting AI instance counts avoids confusion, as that figure does not meaningfully indicate bias risk.",
     questions: [

@@ -361,6 +361,19 @@ function FormPage({
               }
             />
           )}
+          {getCardById("human-respondents-disclosure") && (
+            <ExpandableCard
+              card={getCardById("human-respondents-disclosure")!}
+              initialData={formData}
+              instances={instancesData["human-respondents-disclosure"]}
+              onDataChange={(questionId, value) =>
+                setFormData((prev) => ({ ...prev, [questionId]: value }))
+              }
+              onInstancesChange={(instances) =>
+                handleInstancesChange("human-respondents-disclosure", instances)
+              }
+            />
+          )}
         </section>
         <section>
           <h2>Core/Enhanced Questions</h2>
@@ -426,19 +439,6 @@ function FormPage({
                   "additional-enhanced-disclosures",
                   instances
                 )
-              }
-            />
-          )}
-          {getCardById("human-respondents-disclosure") && (
-            <ExpandableCard
-              card={getCardById("human-respondents-disclosure")!}
-              initialData={formData}
-              instances={instancesData["human-respondents-disclosure"]}
-              onDataChange={(questionId, value) =>
-                setFormData((prev) => ({ ...prev, [questionId]: value }))
-              }
-              onInstancesChange={(instances) =>
-                handleInstancesChange("human-respondents-disclosure", instances)
               }
             />
           )}
