@@ -58,6 +58,13 @@
   font-weight: 500;
 }
 
+.public-author {
+  font-size: 1rem;
+  color: #555;
+  font-style: italic;
+  margin-top: 0.5rem;
+}
+
 .public-main {
   max-width: 800px;
   margin: 0 auto;

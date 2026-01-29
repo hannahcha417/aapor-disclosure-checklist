@@ -531,3 +531,17 @@ section p {
   color: #666;
   font-style: italic;
 }
+
+.author-input {
+  width: 80%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  margin: 1rem 0;
+}
+
+.author-input:focus {
+  outline: none;
+  border-color: #667eea;
+}

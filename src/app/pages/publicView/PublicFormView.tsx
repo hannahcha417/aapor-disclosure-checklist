@@ -73,6 +73,7 @@ function PublicFormView({ publicId, onBack }: PublicFormViewProps) {
   const [instancesData, setInstancesData] = useState<
     Record<string, Record<string, any>[]>
   >({});
+  const [authorName, setAuthorName] = useState<string | null>(null);
 
   useEffect(() => {
     const loadForm = async () => {
@@ -85,6 +86,7 @@ function PublicFormView({ publicId, onBack }: PublicFormViewProps) {
         setFormTitle(data.title);
         setFormData(data.form_data || {});
         setInstancesData(data.form_data?.instances || {});
+        setAuthorName(data.author_name || null);
       } catch (err) {
         setError("Failed to load form.");
       } finally {
@@ -142,6 +144,9 @@ function PublicFormView({ publicId, onBack }: PublicFormViewProps) {
       <header className="public-header">
         <h1 className="public-title">{formTitle}</h1>
         <p className="public-subtitle">AAPOR AI Disclosure Checklist</p>
+        {authorName && (
+          <p className="public-author">Authored by {authorName}</p>
+        )}
       </header>
 
       <main className="public-main">

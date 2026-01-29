@@ -70,6 +70,8 @@ function FormPage({
   const [isPublic, setIsPublic] = useState(initialIsPublic);
   const [isPublishing, setIsPublishing] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
+  const [showAuthorModal, setShowAuthorModal] = useState(false);
+  const [authorName, setAuthorName] = useState("");
   const [copied, setCopied] = useState(false);
 
   // Auto-save every 5 seconds (only for logged-in users)
@@ -150,8 +152,17 @@ function FormPage({
     }
   };
 
-  // Handle publishing the form
-  const handlePublish = async () => {
+  // Handle publishing the form - first show author modal
+  const handlePublish = () => {
+    setShowAuthorModal(true);
+  };
+
+  // Actually publish after author name is entered
+  const handleConfirmPublish = async () => {
+    if (!authorName.trim()) return;
+
+    setShowAuthorModal(false);
+
     if (!formId) {
       // Need to save first
       const dataToSave = { ...formData, instances: instancesData };
@@ -167,7 +178,12 @@ function FormPage({
     setIsPublishing(true);
     try {
       const dataToSave = { ...formData, instances: instancesData };
-      const { data, error } = await publishForm(formId!, formTitle, dataToSave);
+      const { data, error } = await publishForm(
+        formId!,
+        formTitle,
+        dataToSave,
+        authorName
+      );
       if (error) {
         console.error("Error publishing form:", error);
         return;
@@ -333,6 +349,38 @@ function FormPage({
                 onClick={() => setShowPublishModal(false)}
               >
                 Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAuthorModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Publish Form</h2>
+            <p>Enter your name to be displayed as the author:</p>
+            <input
+              type="text"
+              className="author-input"
+              placeholder="First Name Last Name"
+              value={authorName}
+              onChange={(e) => setAuthorName(e.target.value)}
+              autoFocus
+            />
+            <div className="modal-buttons">
+              <button
+                className="modal-btn cancel"
+                onClick={() => setShowAuthorModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="modal-btn confirm"
+                onClick={handleConfirmPublish}
+                disabled={!authorName.trim()}
+              >
+                Publish
               </button>
             </div>
           </div>

@@ -8,6 +8,7 @@ export type FormData = {
   status: "active" | "submitted";
   public_id?: string;
   is_public?: boolean;
+  author_name?: string;
   created_at?: string;
   updated_at?: string;
 };
@@ -106,7 +107,8 @@ export async function submitForm(formId: string) {
 export async function publishForm(
   formId: string,
   title: string,
-  formData: Record<string, any>
+  formData: Record<string, any>,
+  authorName: string
 ) {
   const { data, error } = await supabase
     .from("forms")
@@ -114,6 +116,7 @@ export async function publishForm(
       title,
       form_data: formData,
       is_public: true,
+      author_name: authorName,
       updated_at: new Date().toISOString(),
     })
     .eq("id", formId)
