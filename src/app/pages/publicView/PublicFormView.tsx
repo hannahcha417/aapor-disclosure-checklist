@@ -10,19 +10,24 @@ type PublicFormViewProps = {
 };
 
 // Collapsible card component
-function CollapsibleCard({ card, instances, formData }: {
+function CollapsibleCard({
+  card,
+  instances,
+  formData,
+}: {
   card: (typeof cardSections)[0];
   instances: Record<string, any>[];
   formData: Record<string, any>;
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
 
-  const actualInstances = instances && instances.length > 0 ? instances : [formData];
+  const actualInstances =
+    instances && instances.length > 0 ? instances : [formData];
 
   return (
     <div className="public-card">
-      <div 
-        className="public-card-header" 
+      <div
+        className="public-card-header"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <h3 className="public-card-title">{card.title}</h3>
@@ -41,7 +46,9 @@ function CollapsibleCard({ card, instances, formData }: {
                 const answer = instance[question.id];
                 return (
                   <div key={question.id} className="public-question">
-                    <div className="public-question-label">{question.label}</div>
+                    <div className="public-question-label">
+                      {question.label}
+                    </div>
                     {answer?.trim() ? (
                       <div className="public-answer">{answer}</div>
                     ) : (
