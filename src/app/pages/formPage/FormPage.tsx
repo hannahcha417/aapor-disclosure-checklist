@@ -1,11 +1,18 @@
 import { useState, useEffect, useRef } from "react";
-import { FiEdit, FiArrowLeft, FiSave } from "react-icons/fi";
+import {
+  FiEdit,
+  FiArrowLeft,
+  FiSave,
+  FiShare2,
+  FiCopy,
+  FiCheck,
+} from "react-icons/fi";
 import { pdf } from "@react-pdf/renderer";
 import { saveAs } from "file-saver";
 import Sidebar from "../../../components/Sidebar";
 import ExpandableCard from "../../../components/ExpandableCard";
 import { getCardById } from "../../../data/formData";
-import { createForm, updateForm } from "../../../utils/forms";
+import { createForm, updateForm, publishForm } from "../../../utils/forms";
 import { FormPDF } from "../../../utils/FormPDF";
 import { FormPDFSummary } from "../../../utils/FormPDFSummary";
 import { generateDocx, generateTxt } from "../../../utils/exportUtils";
@@ -18,6 +25,8 @@ type FormPageProps = {
   formId?: string;
   initialTitle?: string;
   initialData?: Record<string, any>;
+  initialPublicId?: string;
+  initialIsPublic?: boolean;
   isGuest?: boolean;
 };
 
@@ -26,6 +35,8 @@ function FormPage({
   formId: initialFormId,
   initialTitle,
   initialData,
+  initialPublicId,
+  initialIsPublic = false,
   isGuest = false,
 }: FormPageProps) {
   const [sideBarOpen, setSidebarOpen] = useState(false);
@@ -53,6 +64,13 @@ function FormPage({
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined
   );
+
+  // Public sharing state
+  const [publicId, setPublicId] = useState<string | undefined>(initialPublicId);
+  const [isPublic, setIsPublic] = useState(initialIsPublic);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Auto-save every 5 seconds (only for logged-in users)
   useEffect(() => {
@@ -120,6 +138,7 @@ function FormPage({
         const { data, error } = await createForm(formTitle, dataToSave);
         if (data && !error) {
           setFormId(data.id);
+          setPublicId(data.public_id);
         }
       }
       setSaveStatus("saved");
@@ -129,6 +148,49 @@ function FormPage({
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // Handle publishing the form
+  const handlePublish = async () => {
+    if (!formId) {
+      // Need to save first
+      const dataToSave = { ...formData, instances: instancesData };
+      const { data, error } = await createForm(formTitle, dataToSave);
+      if (error || !data) {
+        console.error("Error creating form:", error);
+        return;
+      }
+      setFormId(data.id);
+      setPublicId(data.public_id);
+    }
+
+    setIsPublishing(true);
+    try {
+      const dataToSave = { ...formData, instances: instancesData };
+      const { data, error } = await publishForm(formId!, formTitle, dataToSave);
+      if (error) {
+        console.error("Error publishing form:", error);
+        return;
+      }
+      setIsPublic(true);
+      setPublicId(data.public_id);
+      setShowPublishModal(true);
+    } catch (error) {
+      console.error("Error publishing form:", error);
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const getPublicUrl = () => {
+    const baseUrl = window.location.origin + window.location.pathname;
+    return `${baseUrl}#/view/${publicId}`;
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(getPublicUrl());
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   // Handler for instances changes from ExpandableCard
@@ -239,6 +301,38 @@ function FormPage({
                 }}
               >
                 Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPublishModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>{isPublic ? "Form Published!" : "Publish Form"}</h2>
+            <p>Your form is now publicly accessible at:</p>
+            <div className="public-url-container">
+              <input
+                type="text"
+                className="public-url-input"
+                value={getPublicUrl()}
+                readOnly
+              />
+              <button className="copy-btn" onClick={copyToClipboard}>
+                {copied ? <FiCheck /> : <FiCopy />}
+              </button>
+            </div>
+            <p className="modal-hint">
+              Anyone with this link can view your disclosure. Updates you make
+              will be reflected when you publish again.
+            </p>
+            <div className="modal-buttons">
+              <button
+                className="modal-btn confirm"
+                onClick={() => setShowPublishModal(false)}
+              >
+                Done
               </button>
             </div>
           </div>
@@ -480,9 +574,36 @@ function FormPage({
             />
             Include unanswered questions
           </label>
-          <button className="submit-btn" onClick={handleExport}>
-            Export
-          </button>
+          <div className="button-row">
+            <button className="submit-btn" onClick={handleExport}>
+              Export
+            </button>
+            {!isGuest && (
+              <button
+                className="publish-btn"
+                onClick={handlePublish}
+                disabled={isPublishing}
+              >
+                <FiShare2 />
+                {isPublishing
+                  ? "Publishing..."
+                  : isPublic
+                  ? "Update Public Link"
+                  : "Publish & Share"}
+              </button>
+            )}
+          </div>
+          {isPublic && !isGuest && (
+            <div className="public-link-display">
+              <span className="public-status">✓ Published</span>
+              <button
+                className="view-link-btn"
+                onClick={() => setShowPublishModal(true)}
+              >
+                View Link
+              </button>
+            </div>
+          )}
         </div>
       </main>
     </div>

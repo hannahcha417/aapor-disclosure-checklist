@@ -5,10 +5,11 @@ import Signup from "./pages/login/Signup";
 import UpdatePassword from "./pages/login/UpdatePassword";
 import Dashboard from "./pages/dashboard/Dashboard";
 import FormPage from "./pages/formPage/FormPage";
+import PublicFormView from "./pages/publicView/PublicFormView";
 import { getCurrentUser, signOut } from "../utils/auth";
 
 type AuthPage = "login" | "signup" | "update-password";
-type AppPage = "dashboard" | "survey";
+type AppPage = "dashboard" | "survey" | "public-view";
 
 function App() {
   const [user, setUser] = useState<any>(null);
@@ -25,6 +26,13 @@ function App() {
   const [currentFormData, setCurrentFormData] = useState<Record<string, any>>(
     {}
   );
+  const [currentFormPublicId, setCurrentFormPublicId] = useState<
+    string | undefined
+  >();
+  const [currentFormIsPublic, setCurrentFormIsPublic] = useState(false);
+
+  // Public form viewing state
+  const [publicFormId, setPublicFormId] = useState<string | null>(null);
 
   // Check if user is already logged in on mount
   useEffect(() => {
@@ -35,6 +43,15 @@ function App() {
         setAuthPage("update-password");
         setLoading(false);
         return; // Don't check user yet, let password update handle it
+      }
+
+      // Check if we're viewing a public form
+      const publicMatch = hash.match(/\/view\/([a-f0-9-]+)/i);
+      if (publicMatch) {
+        setPublicFormId(publicMatch[1]);
+        setCurrentPage("public-view");
+        setLoading(false);
+        return;
       }
 
       try {
@@ -83,18 +100,24 @@ function App() {
     setCurrentFormId(undefined);
     setCurrentFormTitle("AAPOR AI Disclosure Checklist");
     setCurrentFormData({});
+    setCurrentFormPublicId(undefined);
+    setCurrentFormIsPublic(false);
     setCurrentPage("survey");
   };
 
   const handleOpenForm = (
     formId: string,
     title: string,
-    data: Record<string, any>
+    data: Record<string, any>,
+    publicId?: string,
+    isPublic?: boolean
   ) => {
     // Load existing form
     setCurrentFormId(formId);
     setCurrentFormTitle(title);
     setCurrentFormData(data);
+    setCurrentFormPublicId(publicId);
+    setCurrentFormIsPublic(isPublic || false);
     setCurrentPage("survey");
   };
 
@@ -103,6 +126,8 @@ function App() {
     setCurrentFormId(undefined);
     setCurrentFormTitle("AAPOR AI Disclosure Checklist");
     setCurrentFormData({});
+    setCurrentFormPublicId(undefined);
+    setCurrentFormIsPublic(false);
     setCurrentPage("dashboard");
   };
 
@@ -111,6 +136,20 @@ function App() {
       <div className="container">
         <p>Loading...</p>
       </div>
+    );
+  }
+
+  // Show public form view (no auth required)
+  if (currentPage === "public-view" && publicFormId) {
+    return (
+      <PublicFormView
+        publicId={publicFormId}
+        onBack={() => {
+          setPublicFormId(null);
+          setCurrentPage("dashboard");
+          window.location.hash = "";
+        }}
+      />
     );
   }
 
@@ -168,6 +207,8 @@ function App() {
       formId={currentFormId}
       initialTitle={currentFormTitle}
       initialData={currentFormData}
+      initialPublicId={currentFormPublicId}
+      initialIsPublic={currentFormIsPublic}
       onBackToDashboard={handleBackToDashboard}
     />
   );

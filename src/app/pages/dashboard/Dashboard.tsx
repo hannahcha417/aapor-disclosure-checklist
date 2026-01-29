@@ -12,7 +12,9 @@ type DashboardProps = {
   onOpenForm: (
     formId: string,
     title: string,
-    data: Record<string, any>
+    data: Record<string, any>,
+    publicId?: string,
+    isPublic?: boolean
   ) => void;
   onLogout: () => void;
 };
@@ -93,7 +95,13 @@ function Dashboard({ onCreateForm, onOpenForm, onLogout }: DashboardProps) {
                   key={form.id}
                   className="form-card"
                   onClick={() =>
-                    onOpenForm(form.id!, form.title, form.form_data)
+                    onOpenForm(
+                      form.id!,
+                      form.title,
+                      form.form_data,
+                      form.public_id,
+                      form.is_public
+                    )
                   }
                 >
                   <div className="form-card-icon">

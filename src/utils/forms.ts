@@ -6,6 +6,8 @@ export type FormData = {
   title: string;
   form_data: Record<string, any>;
   status: "active" | "submitted";
+  public_id?: string;
+  is_public?: boolean;
   created_at?: string;
   updated_at?: string;
 };
@@ -95,6 +97,51 @@ export async function submitForm(formId: string) {
     .update({ status: "submitted" })
     .eq("id", formId)
     .select()
+    .single();
+
+  return { data, error };
+}
+
+// Publish a form to make it publicly accessible
+export async function publishForm(
+  formId: string,
+  title: string,
+  formData: Record<string, any>
+) {
+  const { data, error } = await supabase
+    .from("forms")
+    .update({
+      title,
+      form_data: formData,
+      is_public: true,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", formId)
+    .select()
+    .single();
+
+  return { data, error };
+}
+
+// Unpublish a form (make it private again)
+export async function unpublishForm(formId: string) {
+  const { data, error } = await supabase
+    .from("forms")
+    .update({ is_public: false })
+    .eq("id", formId)
+    .select()
+    .single();
+
+  return { data, error };
+}
+
+// Get a public form by its public_id (no auth required)
+export async function getPublicFormByPublicId(publicId: string) {
+  const { data, error } = await supabase
+    .from("forms")
+    .select("*")
+    .eq("public_id", publicId)
+    .eq("is_public", true)
     .single();
 
   return { data, error };
