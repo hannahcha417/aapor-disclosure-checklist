@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 import { getPublicFormByPublicId } from "../../../utils/forms";
 import { cardSections } from "../../../data/formData";
 import "./PublicFormView.css";
@@ -7,6 +8,55 @@ type PublicFormViewProps = {
   publicId: string;
   onBack: () => void;
 };
+
+// Collapsible card component
+function CollapsibleCard({ card, instances, formData }: {
+  card: (typeof cardSections)[0];
+  instances: Record<string, any>[];
+  formData: Record<string, any>;
+}) {
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  const actualInstances = instances && instances.length > 0 ? instances : [formData];
+
+  return (
+    <div className="public-card">
+      <div 
+        className="public-card-header" 
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <h3 className="public-card-title">{card.title}</h3>
+        <span className="public-card-toggle">
+          {isExpanded ? <FiChevronUp /> : <FiChevronDown />}
+        </span>
+      </div>
+      {isExpanded && (
+        <div className="public-card-content">
+          {actualInstances.map((instance, idx) => (
+            <div key={idx} className="public-instance">
+              {actualInstances.length > 1 && (
+                <div className="public-instance-label">AI Tool {idx + 1}</div>
+              )}
+              {card.questions.map((question) => {
+                const answer = instance[question.id];
+                return (
+                  <div key={question.id} className="public-question">
+                    <div className="public-question-label">{question.label}</div>
+                    {answer?.trim() ? (
+                      <div className="public-answer">{answer}</div>
+                    ) : (
+                      <div className="public-no-answer">No answer</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function PublicFormView({ publicId, onBack }: PublicFormViewProps) {
   const [loading, setLoading] = useState(true);
@@ -55,52 +105,6 @@ function PublicFormView({ publicId, onBack }: PublicFormViewProps) {
     coreEnhanced.includes(card.id)
   );
 
-  const renderCard = (card: (typeof cardSections)[0]) => {
-    // Get instances for this card, or fallback to formData
-    const instances =
-      instancesData[card.id] && instancesData[card.id].length > 0
-        ? instancesData[card.id]
-        : [formData];
-
-    // Check if any instance has answers
-    const hasAnyAnswers = instances.some((instance) =>
-      card.questions.some((q) => instance[q.id]?.trim())
-    );
-
-    if (!hasAnyAnswers) return null;
-
-    return (
-      <div key={card.id} className="public-card">
-        <h3 className="public-card-title">{card.title}</h3>
-        {instances.map((instance, idx) => {
-          const hasAnswers = card.questions.some((q) => instance[q.id]?.trim());
-          if (!hasAnswers) return null;
-
-          return (
-            <div key={idx} className="public-instance">
-              {instances.length > 1 && (
-                <div className="public-instance-label">AI Tool {idx + 1}</div>
-              )}
-              {card.questions.map((question) => {
-                const answer = instance[question.id];
-                if (!answer?.trim()) return null;
-
-                return (
-                  <div key={question.id} className="public-question">
-                    <div className="public-question-label">
-                      {question.label}
-                    </div>
-                    <div className="public-answer">{answer}</div>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
   if (loading) {
     return (
       <div className="public-container">
@@ -133,12 +137,26 @@ function PublicFormView({ publicId, onBack }: PublicFormViewProps) {
       <main className="public-main">
         <section className="public-section">
           <h2 className="public-section-title">Immediate Disclosures</h2>
-          {immediateDisclosureCards.map(renderCard)}
+          {immediateDisclosureCards.map((card) => (
+            <CollapsibleCard
+              key={card.id}
+              card={card}
+              instances={instancesData[card.id]}
+              formData={formData}
+            />
+          ))}
         </section>
 
         <section className="public-section">
           <h2 className="public-section-title">Core/Enhanced Questions</h2>
-          {coreEnhancedCards.map(renderCard)}
+          {coreEnhancedCards.map((card) => (
+            <CollapsibleCard
+              key={card.id}
+              card={card}
+              instances={instancesData[card.id]}
+              formData={formData}
+            />
+          ))}
         </section>
       </main>
 
