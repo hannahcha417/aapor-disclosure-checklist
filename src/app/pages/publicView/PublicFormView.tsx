@@ -96,13 +96,16 @@ function PublicFormView({ publicId, onBack }: PublicFormViewProps) {
   }, [publicId]);
 
   // Group cards by section
-  const immediateDisclosures = ["tasks-performed", "human-oversight"];
+  const immediateDisclosures = [
+    "tasks-performed",
+    "human-oversight",
+    "human-respondents-disclosure",
+  ];
   const coreEnhanced = [
     "model-details",
     "access-tooling-details",
     "core-prompts",
     "additional-enhanced-disclosures",
-    "human-respondents-disclosure",
   ];
 
   const immediateDisclosureCards = cardSections.filter((card) =>
