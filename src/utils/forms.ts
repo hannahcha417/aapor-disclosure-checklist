@@ -39,7 +39,7 @@ export async function createForm(title: string, formData: Record<string, any>) {
 export async function updateForm(
   formId: string,
   title: string,
-  formData: Record<string, any>
+  formData: Record<string, any>,
 ) {
   const { data, error } = await supabase
     .from("forms")
@@ -108,7 +108,7 @@ export async function publishForm(
   formId: string,
   title: string,
   formData: Record<string, any>,
-  authorName: string
+  authorName: string,
 ) {
   const { data, error } = await supabase
     .from("forms")
@@ -146,6 +146,24 @@ export async function getPublicFormByPublicId(publicId: string) {
     .eq("public_id", publicId)
     .eq("is_public", true)
     .single();
+
+  return { data, error };
+}
+
+// Get all published forms for the current user
+export async function getPublishedForms() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("User not authenticated");
+
+  const { data, error } = await supabase
+    .from("forms")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("is_public", true)
+    .order("updated_at", { ascending: false });
 
   return { data, error };
 }

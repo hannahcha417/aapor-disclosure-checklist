@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import "./Dashboard.css";
-import { FiFileText, FiTrash2 } from "react-icons/fi";
+import { FiFileText, FiTrash2, FiLink, FiCopy } from "react-icons/fi";
 import {
   getActiveForms,
   deleteForm,
+  getPublishedForms,
   type FormData,
 } from "../../../utils/forms";
 
@@ -14,17 +15,20 @@ type DashboardProps = {
     title: string,
     data: Record<string, any>,
     publicId?: string,
-    isPublic?: boolean
+    isPublic?: boolean,
   ) => void;
   onLogout: () => void;
 };
 
 function Dashboard({ onCreateForm, onOpenForm, onLogout }: DashboardProps) {
   const [activeForms, setActiveForms] = useState<FormData[]>([]);
+  const [publishedForms, setPublishedForms] = useState<FormData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     loadActiveForms();
+    loadPublishedForms();
   }, []);
 
   const loadActiveForms = async () => {
@@ -37,6 +41,34 @@ function Dashboard({ onCreateForm, onOpenForm, onLogout }: DashboardProps) {
       console.error("Error loading forms:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadPublishedForms = async () => {
+    try {
+      const { data, error } = await getPublishedForms();
+      if (data && !error) {
+        setPublishedForms(data);
+      }
+    } catch (error) {
+      console.error("Error loading published forms:", error);
+    }
+  };
+
+  const getPublicUrl = (publicId: string) => {
+    const baseUrl = window.location.origin + window.location.pathname;
+    return `${baseUrl}#/view/${publicId}`;
+  };
+
+  const copyToClipboard = async (e: React.MouseEvent, publicId: string) => {
+    e.stopPropagation();
+    const url = getPublicUrl(publicId);
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedId(publicId);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (error) {
+      console.error("Failed to copy:", error);
     }
   };
 
@@ -100,7 +132,7 @@ function Dashboard({ onCreateForm, onOpenForm, onLogout }: DashboardProps) {
                       form.title,
                       form.form_data,
                       form.public_id,
-                      form.is_public
+                      form.is_public,
                     )
                   }
                 >
@@ -129,11 +161,48 @@ function Dashboard({ onCreateForm, onOpenForm, onLogout }: DashboardProps) {
               <p>No forms yet. Create your first form to get started!</p>
             </div>
           )}
-          <h3>Previous Submissions</h3>
-          <div className="empty-state">
-            <FiFileText className="empty-icon" />
-            <p>No forms yet. Create your first form to get started!</p>
-          </div>
+          <h3>Published Links</h3>
+          {publishedForms.length > 0 ? (
+            <div className="forms-grid">
+              {publishedForms.map((form) => (
+                <div
+                  key={form.id}
+                  className="form-card published-card"
+                  onClick={() =>
+                    window.open(getPublicUrl(form.public_id!), "_blank")
+                  }
+                >
+                  <div className="form-card-icon published-icon">
+                    <FiLink />
+                  </div>
+                  <div className="form-card-content">
+                    <h4>{form.title}</h4>
+                    <p className="form-card-date public-url">
+                      {getPublicUrl(form.public_id!)}
+                    </p>
+                  </div>
+                  <button
+                    className="action-btn copy-btn"
+                    onClick={(e) => copyToClipboard(e, form.public_id!)}
+                    aria-label="Copy link"
+                    title="Copy link"
+                  >
+                    <FiCopy />
+                    {copiedId === form.public_id && (
+                      <span className="copied-tooltip">Copied!</span>
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <FiLink className="empty-icon" />
+              <p>
+                No published forms yet. Publish a form to share it publicly!
+              </p>
+            </div>
+          )}
         </div>
         <div className="logout-container">
           <button onClick={onLogout} className="btn">
