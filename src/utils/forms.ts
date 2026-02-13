@@ -6,6 +6,7 @@ export type FormData = {
   title: string;
   form_data: Record<string, any>;
   status: "active" | "submitted";
+  template_id?: string;
   public_id?: string;
   is_public?: boolean;
   author_name?: string;
@@ -14,7 +15,11 @@ export type FormData = {
 };
 
 // Create a new form
-export async function createForm(title: string, formData: Record<string, any>) {
+export async function createForm(
+  title: string,
+  formData: Record<string, any>,
+  templateId: string = "ai-disclosure",
+) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -27,6 +32,7 @@ export async function createForm(title: string, formData: Record<string, any>) {
       user_id: user.id,
       title,
       form_data: formData,
+      template_id: templateId,
       status: "active",
     })
     .select()

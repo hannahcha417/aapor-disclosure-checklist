@@ -11,7 +11,11 @@ import { pdf } from "@react-pdf/renderer";
 import { saveAs } from "file-saver";
 import Sidebar from "../../../components/Sidebar";
 import ExpandableCard from "../../../components/ExpandableCard";
-import { getCardById } from "../../../data/formData";
+import {
+  getTemplateById,
+  DEFAULT_TEMPLATE_ID,
+  type FormTemplate,
+} from "../../../data/templates";
 import { createForm, updateForm, publishForm } from "../../../utils/forms";
 import { FormPDF } from "../../../utils/FormPDF";
 import { FormPDFSummary } from "../../../utils/FormPDFSummary";
@@ -27,6 +31,7 @@ type FormPageProps = {
   initialData?: Record<string, any>;
   initialPublicId?: string;
   initialIsPublic?: boolean;
+  templateId?: string;
   isGuest?: boolean;
 };
 
@@ -37,6 +42,7 @@ function FormPage({
   initialData,
   initialPublicId,
   initialIsPublic = false,
+  templateId = DEFAULT_TEMPLATE_ID,
   isGuest = false,
 }: FormPageProps) {
   const [sideBarOpen, setSidebarOpen] = useState(false);
@@ -44,7 +50,7 @@ function FormPage({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [formId, setFormId] = useState<string | undefined>(initialFormId);
   const [formData, setFormData] = useState<Record<string, any>>(
-    initialData || {}
+    initialData || {},
   );
   // Multi-instance data: { cardId: [instance1, instance2, ...] }
   const [instancesData, setInstancesData] = useState<
@@ -55,15 +61,23 @@ function FormPage({
   const [instructionsExpanded, setInstructionsExpanded] = useState(true);
   const [showGuestExitWarning, setShowGuestExitWarning] = useState(false);
   const [exportFormat, setExportFormat] = useState<"detailed" | "summary">(
-    "detailed"
+    "detailed",
   );
   const [exportFileType, setExportFileType] = useState<"pdf" | "docx" | "txt">(
-    "pdf"
+    "pdf",
   );
   const [includeEmpty, setIncludeEmpty] = useState(true);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
-    undefined
+    undefined,
   );
+
+  // Get the template
+  const template: FormTemplate | undefined = getTemplateById(templateId);
+
+  // Helper to get card by ID from template
+  const getCardById = (cardId: string) => {
+    return template?.sections.find((s) => s.id === cardId);
+  };
 
   // Public sharing state
   const [publicId, setPublicId] = useState<string | undefined>(initialPublicId);
@@ -94,7 +108,11 @@ function FormPage({
           await updateForm(formId, formTitle, dataToSave);
         } else {
           // Create new form
-          const { data, error } = await createForm(formTitle, dataToSave);
+          const { data, error } = await createForm(
+            formTitle,
+            dataToSave,
+            templateId,
+          );
           if (data && !error) {
             setFormId(data.id);
           }
@@ -137,7 +155,11 @@ function FormPage({
       if (formId) {
         await updateForm(formId, formTitle, dataToSave);
       } else {
-        const { data, error } = await createForm(formTitle, dataToSave);
+        const { data, error } = await createForm(
+          formTitle,
+          dataToSave,
+          templateId,
+        );
         if (data && !error) {
           setFormId(data.id);
           setPublicId(data.public_id);
@@ -166,7 +188,11 @@ function FormPage({
     if (!formId) {
       // Need to save first
       const dataToSave = { ...formData, instances: instancesData };
-      const { data, error } = await createForm(formTitle, dataToSave);
+      const { data, error } = await createForm(
+        formTitle,
+        dataToSave,
+        templateId,
+      );
       if (error || !data) {
         console.error("Error creating form:", error);
         return;
@@ -182,7 +208,7 @@ function FormPage({
         formId!,
         formTitle,
         dataToSave,
-        authorName
+        authorName,
       );
       if (error) {
         console.error("Error publishing form:", error);
@@ -212,7 +238,7 @@ function FormPage({
   // Handler for instances changes from ExpandableCard
   const handleInstancesChange = (
     cardId: string,
-    instances: Record<string, any>[]
+    instances: Record<string, any>[],
   ) => {
     setInstancesData((prev) => ({
       ...prev,
@@ -233,6 +259,7 @@ function FormPage({
               formData={formData}
               instancesData={instancesData}
               includeEmpty={includeEmpty}
+              templateId={templateId}
             />
           ) : (
             <FormPDF
@@ -240,6 +267,7 @@ function FormPage({
               formData={formData}
               instancesData={instancesData}
               includeEmpty={includeEmpty}
+              templateId={templateId}
             />
           );
         const blob = await pdf(component).toBlob();
@@ -250,7 +278,8 @@ function FormPage({
           formData,
           instancesData,
           exportFormat,
-          includeEmpty
+          includeEmpty,
+          templateId,
         );
         // Use direct download link approach for DOCX
         const url = URL.createObjectURL(blob);
@@ -267,7 +296,8 @@ function FormPage({
           formData,
           instancesData,
           exportFormat,
-          includeEmpty
+          includeEmpty,
+          templateId,
         );
         saveAs(blob, `${baseFileName}${suffix}.txt`);
       }
@@ -444,8 +474,9 @@ function FormPage({
         <div className="instructions">
           <div className="instructions-header">
             <h3>
-              For each question in this checklist, the researcher should
-              indicate one of the following:
+              {templateId === "ai-disclosure"
+                ? "For each question in this checklist, the researcher should indicate one of the following:"
+                : "Instructions for AAPOR Required Disclosure Elements:"}
             </h3>
             <button
               className="arrow-btn"
@@ -457,134 +488,73 @@ function FormPage({
           </div>
           {instructionsExpanded && (
             <div className="instructions-content">
-              <ul>
-                <li>The answer to the question</li>
-                <li>Question is not applicable</li>
-                <li>Answer is unknown to the researcher and explain why </li>
-                <li>Answer is proprietary and explainwhy </li>
-                <li>
-                  Answer would violate privacy of participants and explain why{" "}
-                </li>
-              </ul>
+              {templateId === "ai-disclosure" ? (
+                <ul>
+                  <li>The answer to the question</li>
+                  <li>Question is not applicable</li>
+                  <li>Answer is unknown to the researcher and explain why </li>
+                  <li>Answer is proprietary and explainwhy </li>
+                  <li>
+                    Answer would violate privacy of participants and explain
+                    why{" "}
+                  </li>
+                </ul>
+              ) : (
+                <ul>
+                  {/* TODO: Add instructions for AAPOR Required Disclosure Elements */}
+                  <li>
+                    Every note and article or note must have an Appendix A that
+                    provides the AAPOR required disclosure elements for each
+                    data source used. This appendix will be type set and
+                    published with the final version of your manuscript. Copy
+                    and paste the completed Appendix A at the end of your final
+                    manuscript.
+                  </li>
+                  <li>
+                    Instructions shown in italtics should be deleted when the
+                    Appendix is finalized. You can insert a link to an online
+                    reference in lieu of a description if it is a study-specific
+                    methodological description and permanently archived. Please
+                    indicate if a required element does not apply to each data
+                    source and why.
+                  </li>
+                  <li>
+                    Insert additional sets of information if your manuscript
+                    uses more than one data source using the "Add Another Data
+                    Source" button under each section.
+                  </li>
+                </ul>
+              )}
             </div>
           )}
         </div>
 
-        <section>
-          <h2>Immediate Disclosures</h2>
-          <p>
-            Immediate disclosures must be included in any reporting or
-            methodological summaries and presented in a way that is clearly
-            disclosed and easily accessible to readers.
-          </p>
-          {getCardById("tasks-performed") && (
-            <ExpandableCard
-              card={getCardById("tasks-performed")!}
-              initialData={formData}
-              instances={instancesData["tasks-performed"]}
-              onDataChange={(questionId, value) =>
-                setFormData((prev) => ({ ...prev, [questionId]: value }))
-              }
-              onInstancesChange={(instances) =>
-                handleInstancesChange("tasks-performed", instances)
-              }
-            />
-          )}
-          {getCardById("human-oversight") && (
-            <ExpandableCard
-              card={getCardById("human-oversight")!}
-              initialData={formData}
-              instances={instancesData["human-oversight"]}
-              onDataChange={(questionId, value) =>
-                setFormData((prev) => ({ ...prev, [questionId]: value }))
-              }
-              onInstancesChange={(instances) =>
-                handleInstancesChange("human-oversight", instances)
-              }
-            />
-          )}
-          {getCardById("human-respondents-disclosure") && (
-            <ExpandableCard
-              card={getCardById("human-respondents-disclosure")!}
-              initialData={formData}
-              instances={instancesData["human-respondents-disclosure"]}
-              onDataChange={(questionId, value) =>
-                setFormData((prev) => ({ ...prev, [questionId]: value }))
-              }
-              onInstancesChange={(instances) =>
-                handleInstancesChange("human-respondents-disclosure", instances)
-              }
-            />
-          )}
-        </section>
-        <section>
-          <h2>Core/Enhanced Questions</h2>
-          <p>
-            Core questions should be answered in all reporting scenarios
-            ensuring consistent transparency across studies: this is the minimum
-            viable disclosure to ensure that consumers of the polling data can
-            understand potential bias and limitations. Enhanced questions are
-            always valuable to answer, as they provide deeper insight into
-            methods and AI involvement, but they are not mandatory in every
-            situation: this is necessary for any situation that requires
-            reproducibility.
-          </p>
-          {getCardById("model-details") && (
-            <ExpandableCard
-              card={getCardById("model-details")!}
-              initialData={formData}
-              instances={instancesData["model-details"]}
-              onDataChange={(questionId, value) =>
-                setFormData((prev) => ({ ...prev, [questionId]: value }))
-              }
-              onInstancesChange={(instances) =>
-                handleInstancesChange("model-details", instances)
-              }
-            />
-          )}
-          {getCardById("access-tooling-details") && (
-            <ExpandableCard
-              card={getCardById("access-tooling-details")!}
-              initialData={formData}
-              instances={instancesData["access-tooling-details"]}
-              onDataChange={(questionId, value) =>
-                setFormData((prev) => ({ ...prev, [questionId]: value }))
-              }
-              onInstancesChange={(instances) =>
-                handleInstancesChange("access-tooling-details", instances)
-              }
-            />
-          )}
-          {getCardById("core-prompts") && (
-            <ExpandableCard
-              card={getCardById("core-prompts")!}
-              initialData={formData}
-              instances={instancesData["core-prompts"]}
-              onDataChange={(questionId, value) =>
-                setFormData((prev) => ({ ...prev, [questionId]: value }))
-              }
-              onInstancesChange={(instances) =>
-                handleInstancesChange("core-prompts", instances)
-              }
-            />
-          )}
-          {getCardById("additional-enhanced-disclosures") && (
-            <ExpandableCard
-              card={getCardById("additional-enhanced-disclosures")!}
-              initialData={formData}
-              instances={instancesData["additional-enhanced-disclosures"]}
-              onDataChange={(questionId, value) =>
-                setFormData((prev) => ({ ...prev, [questionId]: value }))
-              }
-              onInstancesChange={(instances) =>
-                handleInstancesChange(
-                  "additional-enhanced-disclosures",
-                  instances
-                )
-              }
-            />
-          )}
-        </section>
+        {/* Dynamically render sections based on template */}
+        {template?.sectionGroups.map((group) => (
+          <section key={group.title}>
+            <h2>{group.title}</h2>
+            <p>{group.description}</p>
+            {group.sectionIds.map((sectionId) => {
+              const card = getCardById(sectionId);
+              if (!card) return null;
+              return (
+                <ExpandableCard
+                  key={sectionId}
+                  card={card}
+                  initialData={formData}
+                  instances={instancesData[sectionId]}
+                  templateId={templateId}
+                  onDataChange={(questionId, value) =>
+                    setFormData((prev) => ({ ...prev, [questionId]: value }))
+                  }
+                  onInstancesChange={(instances) =>
+                    handleInstancesChange(sectionId, instances)
+                  }
+                />
+              );
+            })}
+          </section>
+        ))}
 
         <div className="submit-container">
           <div className="export-options">
@@ -636,8 +606,8 @@ function FormPage({
                 {isPublishing
                   ? "Publishing..."
                   : isPublic
-                  ? "Update Public Link"
-                  : "Publish & Share"}
+                    ? "Update Public Link"
+                    : "Publish & Share"}
               </button>
             )}
           </div>

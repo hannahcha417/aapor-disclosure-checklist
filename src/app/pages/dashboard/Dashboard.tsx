@@ -1,21 +1,23 @@
 import { useState, useEffect } from "react";
 import "./Dashboard.css";
-import { FiFileText, FiTrash2, FiLink, FiCopy } from "react-icons/fi";
+import { FiFileText, FiTrash2, FiLink, FiCopy, FiX } from "react-icons/fi";
 import {
   getActiveForms,
   deleteForm,
   getPublishedForms,
   type FormData,
 } from "../../../utils/forms";
+import { allTemplates } from "../../../data/templates";
 
 type DashboardProps = {
-  onCreateForm: () => void;
+  onCreateForm: (templateId: string) => void;
   onOpenForm: (
     formId: string,
     title: string,
     data: Record<string, any>,
     publicId?: string,
     isPublic?: boolean,
+    templateId?: string,
   ) => void;
   onLogout: () => void;
 };
@@ -25,6 +27,7 @@ function Dashboard({ onCreateForm, onOpenForm, onLogout }: DashboardProps) {
   const [publishedForms, setPublishedForms] = useState<FormData[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
 
   useEffect(() => {
     loadActiveForms();
@@ -53,6 +56,11 @@ function Dashboard({ onCreateForm, onOpenForm, onLogout }: DashboardProps) {
     } catch (error) {
       console.error("Error loading published forms:", error);
     }
+  };
+
+  const handleSelectTemplate = (templateId: string) => {
+    setShowTemplateModal(false);
+    onCreateForm(templateId);
   };
 
   const getPublicUrl = (publicId: string) => {
@@ -114,9 +122,49 @@ function Dashboard({ onCreateForm, onOpenForm, onLogout }: DashboardProps) {
 
         <div className="forms-section">
           <h3>Create a New Form: </h3>
-          <button className="btn" onClick={onCreateForm}>
-            Create Blank Form
+          <button className="btn" onClick={() => setShowTemplateModal(true)}>
+            Create New Form
           </button>
+
+          {/* Template Selection Modal */}
+          {showTemplateModal && (
+            <div
+              className="modal-overlay"
+              onClick={() => setShowTemplateModal(false)}
+            >
+              <div
+                className="modal-content template-modal"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  className="modal-close"
+                  onClick={() => setShowTemplateModal(false)}
+                >
+                  <FiX />
+                </button>
+                <h2>Choose a Template</h2>
+                <p className="modal-description">
+                  Select a form template to get started
+                </p>
+                <div className="template-grid">
+                  {allTemplates.map((template) => (
+                    <div
+                      key={template.id}
+                      className="template-card"
+                      onClick={() => handleSelectTemplate(template.id)}
+                    >
+                      <div className="template-card-icon">
+                        <FiFileText />
+                      </div>
+                      <h4>{template.name}</h4>
+                      <p>{template.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           <h3>Active Forms</h3>
           {loading ? (
             <p>Loading forms...</p>
@@ -133,6 +181,7 @@ function Dashboard({ onCreateForm, onOpenForm, onLogout }: DashboardProps) {
                       form.form_data,
                       form.public_id,
                       form.is_public,
+                      form.template_id,
                     )
                   }
                 >

@@ -9,6 +9,7 @@ type ExpandableCardProps = {
   // Multi-instance support
   instances?: Record<string, any>[];
   onInstancesChange?: (instances: Record<string, any>[]) => void;
+  templateId?: string;
 };
 
 // Character limit for summary truncation
@@ -20,6 +21,7 @@ function ExpandableCard({
   onDataChange,
   instances: externalInstances,
   onInstancesChange,
+  templateId = "ai-disclosure",
 }: ExpandableCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [summaryExpanded, setSummaryExpanded] = useState(false);
@@ -63,13 +65,13 @@ function ExpandableCard({
       if (!question.required) return false;
       const value = instance[question.id];
       return !value || value.trim() === "";
-    })
+    }),
   );
 
   const handleValueChange = (
     instanceIndex: number,
     questionId: string,
-    value: string
+    value: string,
   ) => {
     const newInstances = [...instances];
     newInstances[instanceIndex] = {
@@ -114,7 +116,7 @@ function ExpandableCard({
 
   const renderInstance = (
     instance: Record<string, string>,
-    instanceIndex: number
+    instanceIndex: number,
   ) => {
     return (
       <div key={instanceIndex} className="card-instance">
@@ -132,8 +134,22 @@ function ExpandableCard({
           </div>
         )}
         {card.questions.map((question, qIndex) => {
-          // Conditionally render question 9 only if question 8 is "Yes"
+          // Conditionally render question 9 only if question 8 is "Yes" (AI Disclosure form)
           if (question.id === "q9" && instance["q8"] !== "Yes") {
+            return null;
+          }
+
+          // Conditionally render follow-up questions for AAPOR Required Disclosure form
+          // Panel Information: q21 only shows if q20 is "Yes"
+          if (question.id === "q21" && instance["q20"] !== "Yes") {
+            return null;
+          }
+          // Interviewer or Coders: q23 only shows if q22 is "Yes"
+          if (question.id === "q23" && instance["q22"] !== "Yes") {
+            return null;
+          }
+          // Eligibility Screening: q25 only shows if q24 is "Yes"
+          if (question.id === "q25" && instance["q24"] !== "Yes") {
             return null;
           }
 
@@ -189,7 +205,7 @@ function ExpandableCard({
                     handleValueChange(
                       instanceIndex,
                       question.id,
-                      e.target.value
+                      e.target.value,
                     );
                   }}
                   rows={1}
@@ -203,7 +219,7 @@ function ExpandableCard({
                     handleValueChange(
                       instanceIndex,
                       question.id,
-                      e.target.value
+                      e.target.value,
                     )
                   }
                 />
@@ -261,7 +277,9 @@ function ExpandableCard({
             className="add-instance-btn"
             onClick={addInstance}
           >
-            + Add Another AI Tool or Use Case
+            {templateId === "ai-disclosure"
+              ? "+ Add Another AI Tool or Use Case"
+              : "+ Add Another Data Source"}
           </button>
         </div>
       )}

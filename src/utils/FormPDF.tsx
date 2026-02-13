@@ -1,6 +1,22 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
-import { cardSections } from "../data/formData";
+import { getTemplateById, DEFAULT_TEMPLATE_ID } from "../data/templates";
 import type { CardData } from "../data/formData";
+
+// Helper function to check if conditional questions should be shown
+function shouldShowQuestion(
+  questionId: string,
+  instance: Record<string, any>,
+): boolean {
+  // q9 is conditional on q8 being "Yes"
+  if (questionId === "q9" && instance["q8"] !== "Yes") return false;
+  // q21 is conditional on q20 being "Yes"
+  if (questionId === "q21" && instance["q20"] !== "Yes") return false;
+  // q23 is conditional on q22 being "Yes"
+  if (questionId === "q23" && instance["q22"] !== "Yes") return false;
+  // q25 is conditional on q24 being "Yes"
+  if (questionId === "q25" && instance["q24"] !== "Yes") return false;
+  return true;
+}
 
 const styles = StyleSheet.create({
   page: {
@@ -68,6 +84,7 @@ type FormPDFProps = {
   formData: Record<string, any>;
   instancesData?: Record<string, Record<string, any>[]>;
   includeEmpty?: boolean;
+  templateId?: string;
 };
 
 export const FormPDF = ({
@@ -75,22 +92,26 @@ export const FormPDF = ({
   formData,
   instancesData = {},
   includeEmpty = true,
+  templateId = DEFAULT_TEMPLATE_ID,
 }: FormPDFProps) => {
-  // Group cards by section
-  const immediateDisclosures = ["tasks-performed", "human-oversight"];
-  const coreEnhanced = [
-    "model-details",
-    "access-tooling-details",
-    "core-prompts",
-    "additional-enhanced-disclosures",
-    "human-respondents-disclosure",
-  ];
+  const template = getTemplateById(templateId);
+
+  if (!template) {
+    return (
+      <Document>
+        <Page style={styles.page}>
+          <Text style={styles.title}>{formTitle}</Text>
+          <Text>Template not found</Text>
+        </Page>
+      </Document>
+    );
+  }
 
   const renderInstance = (
     card: CardData,
     instance: Record<string, any>,
     instanceIndex: number,
-    totalInstances: number
+    totalInstances: number,
   ) => {
     // Check if this instance has any answers
     const hasAnswers = card.questions.some((q) => instance[q.id]?.trim());
@@ -103,6 +124,9 @@ export const FormPDF = ({
         )}
         {card.questions.map((question) => {
           const answer = instance[question.id];
+
+          // Skip conditional questions that shouldn't be shown
+          if (!shouldShowQuestion(question.id, instance)) return null;
 
           // Skip unanswered questions if includeEmpty is false
           if (!includeEmpty && !answer?.trim()) return null;
@@ -134,7 +158,7 @@ export const FormPDF = ({
 
     // Check if any instance has answers
     const hasAnyAnswers = instances.some((instance) =>
-      card.questions.some((q) => instance[q.id]?.trim())
+      card.questions.some((q) => instance[q.id]?.trim()),
     );
     if (!includeEmpty && !hasAnyAnswers) return null;
 
@@ -142,28 +166,27 @@ export const FormPDF = ({
       <View key={card.id}>
         <Text style={styles.cardTitle}>{card.title}</Text>
         {instances.map((instance, idx) =>
-          renderInstance(card, instance, idx, instances.length)
+          renderInstance(card, instance, idx, instances.length),
         )}
       </View>
     );
   };
 
-  // Group cards by section
-  const immediateDisclosureCards = cardSections.filter((card) =>
-    immediateDisclosures.includes(card.id)
-  );
-  const coreEnhancedCards = cardSections.filter((card) =>
-    coreEnhanced.includes(card.id)
-  );
-
   return (
     <Document>
       <Page style={styles.page}>
         <Text style={styles.title}>{formTitle}</Text>
-        <Text style={styles.sectionTitle}>Immediate Disclosures</Text>
-        {immediateDisclosureCards.map((card) => renderCard(card))}
-        <Text style={styles.sectionTitle}>Core/Enhanced Questions</Text>
-        {coreEnhancedCards.map((card) => renderCard(card))}
+        {template.sectionGroups.map((group) => (
+          <View key={group.title || "default"}>
+            {group.title && (
+              <Text style={styles.sectionTitle}>{group.title}</Text>
+            )}
+            {group.sectionIds.map((sectionId) => {
+              const card = template.sections.find((s) => s.id === sectionId);
+              return card ? renderCard(card) : null;
+            })}
+          </View>
+        ))}
       </Page>
     </Document>
   );

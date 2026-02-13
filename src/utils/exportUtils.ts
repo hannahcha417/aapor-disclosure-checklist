@@ -1,32 +1,46 @@
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from "docx";
-import { cardSections } from "../data/formData";
+import { getTemplateById, DEFAULT_TEMPLATE_ID } from "../data/templates";
 import type { CardData } from "../data/formData";
 
-// Group cards by section
-const immediateDisclosures = ["tasks-performed", "human-oversight"];
-const coreEnhanced = [
-  "model-details",
-  "access-tooling-details",
-  "core-prompts",
-  "additional-enhanced-disclosures",
-  "human-respondents-disclosure",
-];
-
-const immediateDisclosureCards = cardSections.filter((card) =>
-  immediateDisclosures.includes(card.id)
-);
-const coreEnhancedCards = cardSections.filter((card) =>
-  coreEnhanced.includes(card.id)
-);
+// Helper function to check if a question should be shown based on conditional logic
+function shouldShowQuestion(
+  questionId: string,
+  instance: Record<string, any>,
+): boolean {
+  // AI Disclosure form: q9 only shows if q8 is "Yes"
+  if (questionId === "q9" && instance["q8"] !== "Yes") {
+    return false;
+  }
+  // AAPOR Required Disclosure form conditional questions
+  // Panel Information: q21 only shows if q20 is "Yes"
+  if (questionId === "q21" && instance["q20"] !== "Yes") {
+    return false;
+  }
+  // Interviewer or Coders: q23 only shows if q22 is "Yes"
+  if (questionId === "q23" && instance["q22"] !== "Yes") {
+    return false;
+  }
+  // Eligibility Screening: q25 only shows if q24 is "Yes"
+  if (questionId === "q25" && instance["q24"] !== "Yes") {
+    return false;
+  }
+  return true;
+}
 
 // Generate detailed (numbered) content with multi-instance support
 function generateDetailedContent(
   formTitle: string,
   formData: Record<string, any>,
   instancesData: Record<string, Record<string, any>[]> = {},
-  includeEmpty: boolean = true
+  includeEmpty: boolean = true,
+  templateId: string = DEFAULT_TEMPLATE_ID,
 ): Paragraph[] {
   const paragraphs: Paragraph[] = [];
+  const template = getTemplateById(templateId);
+
+  if (!template) {
+    return paragraphs;
+  }
 
   // Title
   paragraphs.push(
@@ -34,7 +48,7 @@ function generateDetailedContent(
       text: formTitle,
       heading: HeadingLevel.TITLE,
       spacing: { after: 400 },
-    })
+    }),
   );
 
   const renderCard = (card: CardData) => {
@@ -46,7 +60,7 @@ function generateDetailedContent(
 
     // Check if any instance has answers
     const hasAnyAnswers = instances.some((instance) =>
-      card.questions.some((q) => instance[q.id]?.trim())
+      card.questions.some((q) => instance[q.id]?.trim()),
     );
     if (!includeEmpty && !hasAnyAnswers) return;
 
@@ -56,7 +70,7 @@ function generateDetailedContent(
         text: card.title,
         heading: HeadingLevel.HEADING_2,
         spacing: { before: 300, after: 200 },
-      })
+      }),
     );
 
     instances.forEach((instance, instanceIndex) => {
@@ -76,12 +90,15 @@ function generateDetailedContent(
               }),
             ],
             spacing: { before: 200, after: 100 },
-          })
+          }),
         );
       }
 
       card.questions.forEach((question) => {
         const answer = instance[question.id];
+
+        // Skip conditional questions that shouldn't be shown
+        if (!shouldShowQuestion(question.id, instance)) return;
 
         // Skip unanswered questions if includeEmpty is false
         if (!includeEmpty && !answer?.trim()) return;
@@ -96,7 +113,7 @@ function generateDetailedContent(
               }),
             ],
             spacing: { before: 150 },
-          })
+          }),
         );
 
         // Answer
@@ -111,31 +128,33 @@ function generateDetailedContent(
             ],
             indent: { left: 400 },
             spacing: { after: 100 },
-          })
+          }),
         );
       });
     });
   };
 
-  // Immediate Disclosures
-  paragraphs.push(
-    new Paragraph({
-      text: "Immediate Disclosures",
-      heading: HeadingLevel.HEADING_1,
-      spacing: { before: 400, after: 200 },
-    })
-  );
-  immediateDisclosureCards.forEach(renderCard);
+  // Render sections based on template's section groups
+  template.sectionGroups.forEach((group) => {
+    // Add section header if title exists
+    if (group.title) {
+      paragraphs.push(
+        new Paragraph({
+          text: group.title,
+          heading: HeadingLevel.HEADING_1,
+          spacing: { before: 400, after: 200 },
+        }),
+      );
+    }
 
-  // Core/Enhanced Questions
-  paragraphs.push(
-    new Paragraph({
-      text: "Core/Enhanced Questions",
-      heading: HeadingLevel.HEADING_1,
-      spacing: { before: 400, after: 200 },
-    })
-  );
-  coreEnhancedCards.forEach(renderCard);
+    // Render each card in the section
+    group.sectionIds.forEach((sectionId) => {
+      const card = template.sections.find((s) => s.id === sectionId);
+      if (card) {
+        renderCard(card);
+      }
+    });
+  });
 
   return paragraphs;
 }
@@ -145,9 +164,15 @@ function generateSummaryContent(
   formTitle: string,
   formData: Record<string, any>,
   instancesData: Record<string, Record<string, any>[]> = {},
-  includeEmpty: boolean = true
+  includeEmpty: boolean = true,
+  templateId: string = DEFAULT_TEMPLATE_ID,
 ): Paragraph[] {
   const paragraphs: Paragraph[] = [];
+  const template = getTemplateById(templateId);
+
+  if (!template) {
+    return paragraphs;
+  }
 
   // Title
   paragraphs.push(
@@ -155,7 +180,7 @@ function generateSummaryContent(
       text: formTitle,
       heading: HeadingLevel.TITLE,
       spacing: { after: 400 },
-    })
+    }),
   );
 
   const renderCardSummary = (card: CardData) => {
@@ -167,7 +192,7 @@ function generateSummaryContent(
 
     // Check if any instance has answers
     const hasAnyAnswers = instances.some((instance) =>
-      card.questions.some((q) => instance[q.id]?.trim())
+      card.questions.some((q) => instance[q.id]?.trim()),
     );
 
     // Skip card if no answers and includeEmpty is false
@@ -179,12 +204,13 @@ function generateSummaryContent(
         text: card.title,
         heading: HeadingLevel.HEADING_2,
         spacing: { before: 300, after: 200 },
-      })
+      }),
     );
 
     instances.forEach((instance, instanceIndex) => {
-      // Collect all non-empty answers for this instance
+      // Collect all non-empty answers for this instance, filtering out conditional questions
       const answers = card.questions
+        .filter((question) => shouldShowQuestion(question.id, instance))
         .map((question) => instance[question.id])
         .filter((answer) => answer && answer.trim());
 
@@ -203,7 +229,7 @@ function generateSummaryContent(
               }),
             ],
             spacing: { before: 150, after: 50 },
-          })
+          }),
         );
       }
 
@@ -212,7 +238,7 @@ function generateSummaryContent(
           new Paragraph({
             text: answers.join(" "),
             spacing: { after: 200 },
-          })
+          }),
         );
       } else {
         paragraphs.push(
@@ -225,31 +251,33 @@ function generateSummaryContent(
               }),
             ],
             spacing: { after: 200 },
-          })
+          }),
         );
       }
     });
   };
 
-  // Immediate Disclosures
-  paragraphs.push(
-    new Paragraph({
-      text: "Immediate Disclosures",
-      heading: HeadingLevel.HEADING_1,
-      spacing: { before: 400, after: 200 },
-    })
-  );
-  immediateDisclosureCards.forEach(renderCardSummary);
+  // Render sections based on template's section groups
+  template.sectionGroups.forEach((group) => {
+    // Add section header if title exists
+    if (group.title) {
+      paragraphs.push(
+        new Paragraph({
+          text: group.title,
+          heading: HeadingLevel.HEADING_1,
+          spacing: { before: 400, after: 200 },
+        }),
+      );
+    }
 
-  // Core/Enhanced Questions
-  paragraphs.push(
-    new Paragraph({
-      text: "Core/Enhanced Questions",
-      heading: HeadingLevel.HEADING_1,
-      spacing: { before: 400, after: 200 },
-    })
-  );
-  coreEnhancedCards.forEach(renderCardSummary);
+    // Render each card in the section
+    group.sectionIds.forEach((sectionId) => {
+      const card = template.sections.find((s) => s.id === sectionId);
+      if (card) {
+        renderCardSummary(card);
+      }
+    });
+  });
 
   return paragraphs;
 }
@@ -259,16 +287,24 @@ export async function generateDocx(
   formData: Record<string, any>,
   instancesData: Record<string, Record<string, any>[]> = {},
   format: "detailed" | "summary",
-  includeEmpty: boolean = true
+  includeEmpty: boolean = true,
+  templateId: string = DEFAULT_TEMPLATE_ID,
 ): Promise<Blob> {
   const paragraphs =
     format === "summary"
-      ? generateSummaryContent(formTitle, formData, instancesData, includeEmpty)
+      ? generateSummaryContent(
+          formTitle,
+          formData,
+          instancesData,
+          includeEmpty,
+          templateId,
+        )
       : generateDetailedContent(
           formTitle,
           formData,
           instancesData,
-          includeEmpty
+          includeEmpty,
+          templateId,
         );
 
   const doc = new Document({
@@ -290,9 +326,15 @@ function generateDetailedText(
   formTitle: string,
   formData: Record<string, any>,
   instancesData: Record<string, Record<string, any>[]> = {},
-  includeEmpty: boolean = true
+  includeEmpty: boolean = true,
+  templateId: string = DEFAULT_TEMPLATE_ID,
 ): string {
   let text = `${formTitle}\n${"=".repeat(formTitle.length)}\n\n`;
+  const template = getTemplateById(templateId);
+
+  if (!template) {
+    return text;
+  }
 
   const renderCard = (card: CardData) => {
     // Get instances for this card, or fallback to formData
@@ -303,7 +345,7 @@ function generateDetailedText(
 
     // Check if any instance has answers
     const hasAnyAnswers = instances.some((instance) =>
-      card.questions.some((q) => instance[q.id]?.trim())
+      card.questions.some((q) => instance[q.id]?.trim()),
     );
     if (!includeEmpty && !hasAnyAnswers) return;
 
@@ -322,6 +364,9 @@ function generateDetailedText(
       card.questions.forEach((question) => {
         const answer = instance[question.id];
 
+        // Skip conditional questions that shouldn't be shown
+        if (!shouldShowQuestion(question.id, instance)) return;
+
         // Skip unanswered questions if includeEmpty is false
         if (!includeEmpty && !answer?.trim()) return;
 
@@ -331,11 +376,22 @@ function generateDetailedText(
     });
   };
 
-  text += "\nIMMEDIATE DISCLOSURES\n" + "=".repeat(21) + "\n";
-  immediateDisclosureCards.forEach(renderCard);
+  // Render sections based on template's section groups
+  template.sectionGroups.forEach((group) => {
+    if (group.title) {
+      text +=
+        `\n${group.title.toUpperCase()}\n` +
+        "=".repeat(group.title.length) +
+        "\n";
+    }
 
-  text += "\n\nCORE/ENHANCED QUESTIONS\n" + "=".repeat(23) + "\n";
-  coreEnhancedCards.forEach(renderCard);
+    group.sectionIds.forEach((sectionId) => {
+      const card = template.sections.find((s) => s.id === sectionId);
+      if (card) {
+        renderCard(card);
+      }
+    });
+  });
 
   return text;
 }
@@ -345,9 +401,15 @@ function generateSummaryText(
   formTitle: string,
   formData: Record<string, any>,
   instancesData: Record<string, Record<string, any>[]> = {},
-  includeEmpty: boolean = true
+  includeEmpty: boolean = true,
+  templateId: string = DEFAULT_TEMPLATE_ID,
 ): string {
   let text = `${formTitle}\n${"=".repeat(formTitle.length)}\n\n`;
+  const template = getTemplateById(templateId);
+
+  if (!template) {
+    return text;
+  }
 
   const renderCardSummary = (card: CardData) => {
     // Get instances for this card, or fallback to formData
@@ -358,7 +420,7 @@ function generateSummaryText(
 
     // Check if any instance has answers
     const hasAnyAnswers = instances.some((instance) =>
-      card.questions.some((q) => instance[q.id]?.trim())
+      card.questions.some((q) => instance[q.id]?.trim()),
     );
 
     // Skip card if no answers and includeEmpty is false
@@ -368,6 +430,7 @@ function generateSummaryText(
 
     instances.forEach((instance, instanceIndex) => {
       const answers = card.questions
+        .filter((question) => shouldShowQuestion(question.id, instance))
         .map((question) => instance[question.id])
         .filter((answer) => answer && answer.trim());
 
@@ -387,11 +450,22 @@ function generateSummaryText(
     });
   };
 
-  text += "\nIMMEDIATE DISCLOSURES\n" + "=".repeat(21) + "\n";
-  immediateDisclosureCards.forEach(renderCardSummary);
+  // Render sections based on template's section groups
+  template.sectionGroups.forEach((group) => {
+    if (group.title) {
+      text +=
+        `\n${group.title.toUpperCase()}\n` +
+        "=".repeat(group.title.length) +
+        "\n";
+    }
 
-  text += "\n\nCORE/ENHANCED QUESTIONS\n" + "=".repeat(23) + "\n";
-  coreEnhancedCards.forEach(renderCardSummary);
+    group.sectionIds.forEach((sectionId) => {
+      const card = template.sections.find((s) => s.id === sectionId);
+      if (card) {
+        renderCardSummary(card);
+      }
+    });
+  });
 
   return text;
 }
@@ -401,12 +475,25 @@ export function generateTxt(
   formData: Record<string, any>,
   instancesData: Record<string, Record<string, any>[]> = {},
   format: "detailed" | "summary",
-  includeEmpty: boolean = true
+  includeEmpty: boolean = true,
+  templateId: string = DEFAULT_TEMPLATE_ID,
 ): Blob {
   const content =
     format === "summary"
-      ? generateSummaryText(formTitle, formData, instancesData, includeEmpty)
-      : generateDetailedText(formTitle, formData, instancesData, includeEmpty);
+      ? generateSummaryText(
+          formTitle,
+          formData,
+          instancesData,
+          includeEmpty,
+          templateId,
+        )
+      : generateDetailedText(
+          formTitle,
+          formData,
+          instancesData,
+          includeEmpty,
+          templateId,
+        );
 
   return new Blob([content], { type: "text/plain;charset=utf-8" });
 }

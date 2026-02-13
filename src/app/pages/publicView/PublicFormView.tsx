@@ -1,8 +1,28 @@
 import { useState, useEffect } from "react";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 import { getPublicFormByPublicId } from "../../../utils/forms";
-import { cardSections } from "../../../data/formData";
+import {
+  getTemplateById,
+  DEFAULT_TEMPLATE_ID,
+  type CardData,
+} from "../../../data/templates";
 import "./PublicFormView.css";
+
+// Helper function to check if conditional questions should be shown
+function shouldShowQuestion(
+  questionId: string,
+  instance: Record<string, any>,
+): boolean {
+  // q9 is conditional on q8 being "Yes"
+  if (questionId === "q9" && instance["q8"] !== "Yes") return false;
+  // q21 is conditional on q20 being "Yes"
+  if (questionId === "q21" && instance["q20"] !== "Yes") return false;
+  // q23 is conditional on q22 being "Yes"
+  if (questionId === "q23" && instance["q22"] !== "Yes") return false;
+  // q25 is conditional on q24 being "Yes"
+  if (questionId === "q25" && instance["q24"] !== "Yes") return false;
+  return true;
+}
 
 type PublicFormViewProps = {
   publicId: string;
@@ -15,7 +35,7 @@ function CollapsibleCard({
   instances,
   formData,
 }: {
-  card: (typeof cardSections)[0];
+  card: CardData;
   instances: Record<string, any>[];
   formData: Record<string, any>;
 }) {
@@ -44,6 +64,10 @@ function CollapsibleCard({
               )}
               {card.questions.map((question) => {
                 const answer = instance[question.id];
+
+                // Skip conditional questions that shouldn't be shown
+                if (!shouldShowQuestion(question.id, instance)) return null;
+
                 return (
                   <div key={question.id} className="public-question">
                     <div className="public-question-label">
@@ -74,6 +98,7 @@ function PublicFormView({ publicId, onBack }: PublicFormViewProps) {
     Record<string, Record<string, any>[]>
   >({});
   const [authorName, setAuthorName] = useState<string | null>(null);
+  const [templateId, setTemplateId] = useState<string>(DEFAULT_TEMPLATE_ID);
 
   useEffect(() => {
     const loadForm = async () => {
@@ -87,6 +112,7 @@ function PublicFormView({ publicId, onBack }: PublicFormViewProps) {
         setFormData(data.form_data || {});
         setInstancesData(data.form_data?.instances || {});
         setAuthorName(data.author_name || null);
+        setTemplateId(data.template_id || DEFAULT_TEMPLATE_ID);
       } catch (err) {
         setError("Failed to load form.");
       } finally {
@@ -97,25 +123,8 @@ function PublicFormView({ publicId, onBack }: PublicFormViewProps) {
     loadForm();
   }, [publicId]);
 
-  // Group cards by section
-  const immediateDisclosures = [
-    "tasks-performed",
-    "human-oversight",
-    "human-respondents-disclosure",
-  ];
-  const coreEnhanced = [
-    "model-details",
-    "access-tooling-details",
-    "core-prompts",
-    "additional-enhanced-disclosures",
-  ];
-
-  const immediateDisclosureCards = cardSections.filter((card) =>
-    immediateDisclosures.includes(card.id)
-  );
-  const coreEnhancedCards = cardSections.filter((card) =>
-    coreEnhanced.includes(card.id)
-  );
+  // Get template
+  const template = getTemplateById(templateId);
 
   if (loading) {
     return (
@@ -143,36 +152,34 @@ function PublicFormView({ publicId, onBack }: PublicFormViewProps) {
     <div className="public-container">
       <header className="public-header">
         <h1 className="public-title">{formTitle}</h1>
-        <p className="public-subtitle">AAPOR AI Disclosure Checklist</p>
+        <p className="public-subtitle">
+          {template?.name || "Disclosure Checklist"}
+        </p>
         {authorName && (
           <p className="public-author">Authored by {authorName}</p>
         )}
       </header>
 
       <main className="public-main">
-        <section className="public-section">
-          <h2 className="public-section-title">Immediate Disclosures</h2>
-          {immediateDisclosureCards.map((card) => (
-            <CollapsibleCard
-              key={card.id}
-              card={card}
-              instances={instancesData[card.id]}
-              formData={formData}
-            />
-          ))}
-        </section>
-
-        <section className="public-section">
-          <h2 className="public-section-title">Core/Enhanced Questions</h2>
-          {coreEnhancedCards.map((card) => (
-            <CollapsibleCard
-              key={card.id}
-              card={card}
-              instances={instancesData[card.id]}
-              formData={formData}
-            />
-          ))}
-        </section>
+        {template?.sectionGroups.map((group) => (
+          <section key={group.title || "default"} className="public-section">
+            {group.title && (
+              <h2 className="public-section-title">{group.title}</h2>
+            )}
+            {group.sectionIds.map((sectionId) => {
+              const card = template.sections.find((s) => s.id === sectionId);
+              if (!card) return null;
+              return (
+                <CollapsibleCard
+                  key={card.id}
+                  card={card}
+                  instances={instancesData[card.id]}
+                  formData={formData}
+                />
+              );
+            })}
+          </section>
+        ))}
       </main>
 
       <footer className="public-footer">
@@ -183,7 +190,7 @@ function PublicFormView({ publicId, onBack }: PublicFormViewProps) {
             target="_blank"
             rel="noopener noreferrer"
           >
-            AAPOR AI Disclosure Checklist Tool
+            AAPOR Disclosure Checklist Tool
           </a>
         </p>
       </footer>

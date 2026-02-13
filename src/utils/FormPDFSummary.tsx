@@ -1,6 +1,22 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
-import { cardSections } from "../data/formData";
+import { getTemplateById, DEFAULT_TEMPLATE_ID } from "../data/templates";
 import type { CardData } from "../data/formData";
+
+// Helper function to check if conditional questions should be shown
+function shouldShowQuestion(
+  questionId: string,
+  instance: Record<string, any>,
+): boolean {
+  // q9 is conditional on q8 being "Yes"
+  if (questionId === "q9" && instance["q8"] !== "Yes") return false;
+  // q21 is conditional on q20 being "Yes"
+  if (questionId === "q21" && instance["q20"] !== "Yes") return false;
+  // q23 is conditional on q22 being "Yes"
+  if (questionId === "q23" && instance["q22"] !== "Yes") return false;
+  // q25 is conditional on q24 being "Yes"
+  if (questionId === "q25" && instance["q24"] !== "Yes") return false;
+  return true;
+}
 
 const styles = StyleSheet.create({
   page: {
@@ -53,6 +69,7 @@ type FormPDFSummaryProps = {
   formData: Record<string, any>;
   instancesData?: Record<string, Record<string, any>[]>;
   includeEmpty?: boolean;
+  templateId?: string;
 };
 
 export const FormPDFSummary = ({
@@ -60,16 +77,20 @@ export const FormPDFSummary = ({
   formData,
   instancesData = {},
   includeEmpty = true,
+  templateId = DEFAULT_TEMPLATE_ID,
 }: FormPDFSummaryProps) => {
-  // Group cards by section
-  const immediateDisclosures = ["tasks-performed", "human-oversight"];
-  const coreEnhanced = [
-    "model-details",
-    "access-tooling-details",
-    "core-prompts",
-    "additional-enhanced-disclosures",
-    "human-respondents-disclosure",
-  ];
+  const template = getTemplateById(templateId);
+
+  if (!template) {
+    return (
+      <Document>
+        <Page style={styles.page}>
+          <Text style={styles.title}>{formTitle}</Text>
+          <Text>Template not found</Text>
+        </Page>
+      </Document>
+    );
+  }
 
   const renderCardSummary = (card: CardData) => {
     // Get instances for this card, or fallback to formData
@@ -80,7 +101,7 @@ export const FormPDFSummary = ({
 
     // Check if any instance has answers
     const hasAnyAnswers = instances.some((instance) =>
-      card.questions.some((q) => instance[q.id]?.trim())
+      card.questions.some((q) => instance[q.id]?.trim()),
     );
 
     // Skip card if no answers and includeEmpty is false
@@ -90,8 +111,9 @@ export const FormPDFSummary = ({
       <View key={card.id}>
         <Text style={styles.cardTitle}>{card.title}</Text>
         {instances.map((instance, idx) => {
-          // Collect all non-empty answers for this instance
+          // Collect all non-empty answers for this instance, filtering out conditional questions
           const answers = card.questions
+            .filter((question) => shouldShowQuestion(question.id, instance))
             .map((question) => instance[question.id])
             .filter((answer) => answer && answer.trim());
 
@@ -115,22 +137,21 @@ export const FormPDFSummary = ({
     );
   };
 
-  // Group cards by section
-  const immediateDisclosureCards = cardSections.filter((card) =>
-    immediateDisclosures.includes(card.id)
-  );
-  const coreEnhancedCards = cardSections.filter((card) =>
-    coreEnhanced.includes(card.id)
-  );
-
   return (
     <Document>
       <Page style={styles.page}>
         <Text style={styles.title}>{formTitle}</Text>
-        <Text style={styles.sectionTitle}>Immediate Disclosures</Text>
-        {immediateDisclosureCards.map((card) => renderCardSummary(card))}
-        <Text style={styles.sectionTitle}>Core/Enhanced Questions</Text>
-        {coreEnhancedCards.map((card) => renderCardSummary(card))}
+        {template.sectionGroups.map((group) => (
+          <View key={group.title || "default"}>
+            {group.title && (
+              <Text style={styles.sectionTitle}>{group.title}</Text>
+            )}
+            {group.sectionIds.map((sectionId) => {
+              const card = template.sections.find((s) => s.id === sectionId);
+              return card ? renderCardSummary(card) : null;
+            })}
+          </View>
+        ))}
       </Page>
     </Document>
   );

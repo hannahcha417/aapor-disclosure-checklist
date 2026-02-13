@@ -7,6 +7,7 @@ import Dashboard from "./pages/dashboard/Dashboard";
 import FormPage from "./pages/formPage/FormPage";
 import PublicFormView from "./pages/publicView/PublicFormView";
 import { getCurrentUser, signOut } from "../utils/auth";
+import { getTemplateById, DEFAULT_TEMPLATE_ID } from "../data/templates";
 
 type AuthPage = "login" | "signup" | "update-password";
 type AppPage = "dashboard" | "survey" | "public-view";
@@ -21,15 +22,17 @@ function App() {
   // Form state for opening existing forms
   const [currentFormId, setCurrentFormId] = useState<string | undefined>();
   const [currentFormTitle, setCurrentFormTitle] = useState<string>(
-    "AAPOR AI Disclosure Checklist"
+    "AAPOR AI Disclosure Checklist",
   );
   const [currentFormData, setCurrentFormData] = useState<Record<string, any>>(
-    {}
+    {},
   );
   const [currentFormPublicId, setCurrentFormPublicId] = useState<
     string | undefined
   >();
   const [currentFormIsPublic, setCurrentFormIsPublic] = useState(false);
+  const [currentTemplateId, setCurrentTemplateId] =
+    useState<string>(DEFAULT_TEMPLATE_ID);
 
   // Public form viewing state
   const [publicFormId, setPublicFormId] = useState<string | null>(null);
@@ -95,13 +98,15 @@ function App() {
     setCurrentPage("survey");
   };
 
-  const handleCreateForm = () => {
+  const handleCreateForm = (templateId: string) => {
     // Reset form state for new form
+    const template = getTemplateById(templateId);
     setCurrentFormId(undefined);
-    setCurrentFormTitle("AAPOR AI Disclosure Checklist");
+    setCurrentFormTitle(template?.name || "New Form");
     setCurrentFormData({});
     setCurrentFormPublicId(undefined);
     setCurrentFormIsPublic(false);
+    setCurrentTemplateId(templateId);
     setCurrentPage("survey");
   };
 
@@ -110,7 +115,8 @@ function App() {
     title: string,
     data: Record<string, any>,
     publicId?: string,
-    isPublic?: boolean
+    isPublic?: boolean,
+    templateId?: string,
   ) => {
     // Load existing form
     setCurrentFormId(formId);
@@ -118,16 +124,18 @@ function App() {
     setCurrentFormData(data);
     setCurrentFormPublicId(publicId);
     setCurrentFormIsPublic(isPublic || false);
+    setCurrentTemplateId(templateId || DEFAULT_TEMPLATE_ID);
     setCurrentPage("survey");
   };
 
   const handleBackToDashboard = () => {
     // Clear form state when going back
     setCurrentFormId(undefined);
-    setCurrentFormTitle("AAPOR AI Disclosure Checklist");
+    setCurrentFormTitle("New Form");
     setCurrentFormData({});
     setCurrentFormPublicId(undefined);
     setCurrentFormIsPublic(false);
+    setCurrentTemplateId(DEFAULT_TEMPLATE_ID);
     setCurrentPage("dashboard");
   };
 
@@ -179,8 +187,9 @@ function App() {
   if (isGuest) {
     return (
       <FormPage
-        initialTitle="AAPOR AI Disclosure Checklist"
+        initialTitle="AI Disclosure Checklist"
         initialData={{}}
+        templateId={DEFAULT_TEMPLATE_ID}
         onBackToDashboard={() => {
           setIsGuest(false);
           setCurrentPage("dashboard");
@@ -209,6 +218,7 @@ function App() {
       initialData={currentFormData}
       initialPublicId={currentFormPublicId}
       initialIsPublic={currentFormIsPublic}
+      templateId={currentTemplateId}
       onBackToDashboard={handleBackToDashboard}
     />
   );
