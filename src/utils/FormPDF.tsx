@@ -117,10 +117,14 @@ export const FormPDF = ({
     const hasAnswers = card.questions.some((q) => instance[q.id]?.trim());
     if (!includeEmpty && !hasAnswers) return null;
 
+    const instanceLabel =
+      templateId === "ai-disclosure" ? "AI Tool" : "Data Source";
     return (
       <View key={instanceIndex}>
         {totalInstances > 1 && (
-          <Text style={styles.instanceLabel}>AI Tool {instanceIndex + 1}</Text>
+          <Text style={styles.instanceLabel}>
+            {instanceLabel} {instanceIndex + 1}
+          </Text>
         )}
         {card.questions.map((question) => {
           const answer = instance[question.id];

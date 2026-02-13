@@ -79,12 +79,14 @@ function generateDetailedContent(
       if (!includeEmpty && !hasAnswers) return;
 
       // Instance label if multiple instances
+      const instanceLabel =
+        templateId === "ai-disclosure" ? "AI Tool" : "Data Source";
       if (instances.length > 1) {
         paragraphs.push(
           new Paragraph({
             children: [
               new TextRun({
-                text: `AI Tool ${instanceIndex + 1}`,
+                text: `${instanceLabel} ${instanceIndex + 1}`,
                 bold: true,
                 color: "555555",
               }),
@@ -218,12 +220,14 @@ function generateSummaryContent(
       if (!includeEmpty && answers.length === 0) return;
 
       // Instance label if multiple instances
+      const instanceLabel =
+        templateId === "ai-disclosure" ? "AI Tool" : "Data Source";
       if (instances.length > 1) {
         paragraphs.push(
           new Paragraph({
             children: [
               new TextRun({
-                text: `AI Tool ${instanceIndex + 1}:`,
+                text: `${instanceLabel} ${instanceIndex + 1}:`,
                 bold: true,
                 color: "555555",
               }),
@@ -357,8 +361,10 @@ function generateDetailedText(
       if (!includeEmpty && !hasAnswers) return;
 
       // Instance label if multiple instances
+      const instanceLabel =
+        templateId === "ai-disclosure" ? "AI Tool" : "Data Source";
       if (instances.length > 1) {
-        text += `\n[AI Tool ${instanceIndex + 1}]\n`;
+        text += `\n[${instanceLabel} ${instanceIndex + 1}]\n`;
       }
 
       card.questions.forEach((question) => {
@@ -438,8 +444,10 @@ function generateSummaryText(
       if (!includeEmpty && answers.length === 0) return;
 
       // Instance label if multiple instances
+      const instanceLabel =
+        templateId === "ai-disclosure" ? "AI Tool" : "Data Source";
       if (instances.length > 1) {
-        text += `\n[AI Tool ${instanceIndex + 1}]\n`;
+        text += `\n[${instanceLabel} ${instanceIndex + 1}]\n`;
       }
 
       if (answers.length > 0) {

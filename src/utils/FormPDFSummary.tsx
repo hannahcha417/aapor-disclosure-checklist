@@ -120,10 +120,14 @@ export const FormPDFSummary = ({
           // Skip this instance if no answers and includeEmpty is false
           if (!includeEmpty && answers.length === 0) return null;
 
+          const instanceLabel =
+            templateId === "ai-disclosure" ? "AI Tool" : "Data Source";
           return (
             <View key={idx}>
               {instances.length > 1 && (
-                <Text style={styles.instanceLabel}>AI Tool {idx + 1}:</Text>
+                <Text style={styles.instanceLabel}>
+                  {instanceLabel} {idx + 1}:
+                </Text>
               )}
               {answers.length > 0 ? (
                 <Text style={styles.summaryParagraph}>{answers.join(" ")}</Text>

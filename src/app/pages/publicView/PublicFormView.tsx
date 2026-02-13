@@ -34,10 +34,12 @@ function CollapsibleCard({
   card,
   instances,
   formData,
+  templateId,
 }: {
   card: CardData;
   instances: Record<string, any>[];
   formData: Record<string, any>;
+  templateId: string;
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -57,32 +59,38 @@ function CollapsibleCard({
       </div>
       {isExpanded && (
         <div className="public-card-content">
-          {actualInstances.map((instance, idx) => (
-            <div key={idx} className="public-instance">
-              {actualInstances.length > 1 && (
-                <div className="public-instance-label">AI Tool {idx + 1}</div>
-              )}
-              {card.questions.map((question) => {
-                const answer = instance[question.id];
-
-                // Skip conditional questions that shouldn't be shown
-                if (!shouldShowQuestion(question.id, instance)) return null;
-
-                return (
-                  <div key={question.id} className="public-question">
-                    <div className="public-question-label">
-                      {question.label}
-                    </div>
-                    {answer?.trim() ? (
-                      <div className="public-answer">{answer}</div>
-                    ) : (
-                      <div className="public-no-answer">No answer</div>
-                    )}
+          {actualInstances.map((instance, idx) => {
+            const instanceLabel =
+              templateId === "ai-disclosure" ? "AI Tool" : "Data Source";
+            return (
+              <div key={idx} className="public-instance">
+                {actualInstances.length > 1 && (
+                  <div className="public-instance-label">
+                    {instanceLabel} {idx + 1}
                   </div>
-                );
-              })}
-            </div>
-          ))}
+                )}
+                {card.questions.map((question) => {
+                  const answer = instance[question.id];
+
+                  // Skip conditional questions that shouldn't be shown
+                  if (!shouldShowQuestion(question.id, instance)) return null;
+
+                  return (
+                    <div key={question.id} className="public-question">
+                      <div className="public-question-label">
+                        {question.label}
+                      </div>
+                      {answer?.trim() ? (
+                        <div className="public-answer">{answer}</div>
+                      ) : (
+                        <div className="public-no-answer">No answer</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -175,6 +183,7 @@ function PublicFormView({ publicId, onBack }: PublicFormViewProps) {
                   card={card}
                   instances={instancesData[card.id]}
                   formData={formData}
+                  templateId={templateId}
                 />
               );
             })}
