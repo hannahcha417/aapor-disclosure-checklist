@@ -1,11 +1,13 @@
 import { useState } from "react";
+import { FiFileText, FiX } from "react-icons/fi";
 import { signIn, resetPassword } from "../../../utils/auth";
+import { allTemplates } from "../../../data/templates";
 import "./Auth.css";
 
 type LoginProps = {
   onSwitchToSignup: () => void;
   onLoginSuccess: () => void;
-  onGuestLogin: () => void;
+  onGuestLogin: (templateId: string) => void;
 };
 
 function Login({ onSwitchToSignup, onLoginSuccess, onGuestLogin }: LoginProps) {
@@ -16,6 +18,7 @@ function Login({ onSwitchToSignup, onLoginSuccess, onGuestLogin }: LoginProps) {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetMessage, setResetMessage] = useState("");
   const [showGuestWarning, setShowGuestWarning] = useState(false);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,6 +128,45 @@ function Login({ onSwitchToSignup, onLoginSuccess, onGuestLogin }: LoginProps) {
               Continue as Guest
             </button>
 
+            {/* Template Selection Modal for Guests */}
+            {showTemplateSelector && (
+              <div
+                className="modal-overlay"
+                onClick={() => setShowTemplateSelector(false)}
+              >
+                <div
+                  className="modal-content template-modal"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    className="modal-close"
+                    onClick={() => setShowTemplateSelector(false)}
+                  >
+                    <FiX />
+                  </button>
+                  <h2>Choose a Template</h2>
+                  <p className="modal-description">
+                    Select a form template to get started
+                  </p>
+                  <div className="template-grid">
+                    {allTemplates.map((template) => (
+                      <div
+                        key={template.id}
+                        className="template-card"
+                        onClick={() => onGuestLogin(template.id)}
+                      >
+                        <div className="template-card-icon">
+                          <FiFileText />
+                        </div>
+                        <h4>{template.name}</h4>
+                        <p>{template.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {showGuestWarning && (
               <div className="modal-overlay">
                 <div className="modal-content">
@@ -150,7 +192,7 @@ function Login({ onSwitchToSignup, onLoginSuccess, onGuestLogin }: LoginProps) {
                       className="modal-btn confirm"
                       onClick={() => {
                         setShowGuestWarning(false);
-                        onGuestLogin();
+                        setShowTemplateSelector(true);
                       }}
                     >
                       Continue as Guest

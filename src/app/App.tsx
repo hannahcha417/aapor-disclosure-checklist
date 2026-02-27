@@ -93,8 +93,9 @@ function App() {
     setCurrentPage("dashboard");
   };
 
-  const handleGuestLogin = () => {
+  const handleGuestLogin = (templateId: string) => {
     setIsGuest(true);
+    setCurrentTemplateId(templateId);
     setCurrentPage("survey");
   };
 
@@ -185,13 +186,15 @@ function App() {
 
   // Guest users go directly to form page
   if (isGuest) {
+    const guestTemplate = getTemplateById(currentTemplateId);
     return (
       <FormPage
-        initialTitle="AI Disclosure Checklist"
+        initialTitle={guestTemplate?.name || "Disclosure Checklist"}
         initialData={{}}
-        templateId={DEFAULT_TEMPLATE_ID}
+        templateId={currentTemplateId}
         onBackToDashboard={() => {
           setIsGuest(false);
+          setCurrentTemplateId(DEFAULT_TEMPLATE_ID);
           setCurrentPage("dashboard");
         }}
         isGuest={true}
