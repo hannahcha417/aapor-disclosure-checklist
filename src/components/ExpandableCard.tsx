@@ -118,11 +118,15 @@ function ExpandableCard({
     instance: Record<string, string>,
     instanceIndex: number,
   ) => {
+    const instanceLabel =
+      templateId === "ai-disclosure" ? "AI Tool" : "Data Source";
     return (
       <div key={instanceIndex} className="card-instance">
         {instances.length > 1 && (
           <div className="instance-header">
-            <span className="instance-label">AI Tool {instanceIndex + 1}</span>
+            <span className="instance-label">
+              {instanceLabel} {instanceIndex + 1}
+            </span>
             <button
               type="button"
               className="remove-instance-btn"

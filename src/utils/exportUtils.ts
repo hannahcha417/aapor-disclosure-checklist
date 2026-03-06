@@ -505,3 +505,210 @@ export function generateTxt(
 
   return new Blob([content], { type: "text/plain;charset=utf-8" });
 }
+
+// Helper function to escape LaTeX special characters
+function escapeLatex(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/\\/g, "\\textbackslash{}")
+    .replace(/&/g, "\\&")
+    .replace(/%/g, "\\%")
+    .replace(/\$/g, "\\$")
+    .replace(/#/g, "\\#")
+    .replace(/_/g, "\\_")
+    .replace(/{/g, "\\{")
+    .replace(/}/g, "\\}")
+    .replace(/~/g, "\\textasciitilde{}")
+    .replace(/\^/g, "\\textasciicircum{}");
+}
+
+// Generate detailed LaTeX content with multi-instance support
+function generateDetailedLatex(
+  formTitle: string,
+  formData: Record<string, any>,
+  instancesData: Record<string, Record<string, any>[]> = {},
+  includeEmpty: boolean = true,
+  templateId: string = DEFAULT_TEMPLATE_ID,
+): string {
+  const template = getTemplateById(templateId);
+
+  if (!template) {
+    return "";
+  }
+
+  let latex = `\\documentclass{article}
+\\usepackage[utf8]{inputenc}
+\\usepackage[margin=1in]{geometry}
+\\usepackage{parskip}
+\\usepackage{enumitem}
+
+\\title{${escapeLatex(formTitle)}}
+\\date{}
+
+\\begin{document}
+\\maketitle
+
+`;
+
+  const renderCard = (card: CardData) => {
+    const instances =
+      instancesData[card.id] && instancesData[card.id].length > 0
+        ? instancesData[card.id]
+        : [formData];
+
+    const hasAnyAnswers = instances.some((instance) =>
+      card.questions.some((q) => instance[q.id]?.trim()),
+    );
+    if (!includeEmpty && !hasAnyAnswers) return;
+
+    latex += `\\subsection*{${escapeLatex(card.title)}}\n\n`;
+
+    instances.forEach((instance, instanceIndex) => {
+      const hasAnswers = card.questions.some((q) => instance[q.id]?.trim());
+      if (!includeEmpty && !hasAnswers) return;
+
+      const instanceLabel =
+        templateId === "ai-disclosure" ? "AI Tool" : "Data Source";
+      if (instances.length > 1) {
+        latex += `\\textbf{${instanceLabel} ${instanceIndex + 1}}\n\n`;
+      }
+
+      card.questions.forEach((question) => {
+        const answer = instance[question.id];
+
+        if (!shouldShowQuestion(question.id, instance)) return;
+        if (!includeEmpty && !answer?.trim()) return;
+
+        latex += `\\textbf{${escapeLatex(question.label)}${question.required ? " *" : ""}}\n\n`;
+        if (answer) {
+          latex += `\\quad ${escapeLatex(answer)}\n\n`;
+        } else {
+          latex += `\\quad \\textit{Not answered}\n\n`;
+        }
+      });
+    });
+  };
+
+  template.sectionGroups.forEach((group) => {
+    if (group.title) {
+      latex += `\\section*{${escapeLatex(group.title)}}\n\n`;
+    }
+
+    group.sectionIds.forEach((sectionId) => {
+      const card = template.sections.find((s) => s.id === sectionId);
+      if (card) {
+        renderCard(card);
+      }
+    });
+  });
+
+  latex += `\\end{document}\n`;
+  return latex;
+}
+
+// Generate summary LaTeX content with multi-instance support
+function generateSummaryLatex(
+  formTitle: string,
+  formData: Record<string, any>,
+  instancesData: Record<string, Record<string, any>[]> = {},
+  includeEmpty: boolean = true,
+  templateId: string = DEFAULT_TEMPLATE_ID,
+): string {
+  const template = getTemplateById(templateId);
+
+  if (!template) {
+    return "";
+  }
+
+  let latex = `\\documentclass{article}
+\\usepackage[utf8]{inputenc}
+\\usepackage[margin=1in]{geometry}
+\\usepackage{parskip}
+
+\\title{${escapeLatex(formTitle)}}
+\\date{}
+
+\\begin{document}
+\\maketitle
+
+`;
+
+  const renderCardSummary = (card: CardData) => {
+    const instances =
+      instancesData[card.id] && instancesData[card.id].length > 0
+        ? instancesData[card.id]
+        : [formData];
+
+    const hasAnyAnswers = instances.some((instance) =>
+      card.questions.some((q) => instance[q.id]?.trim()),
+    );
+    if (!includeEmpty && !hasAnyAnswers) return;
+
+    latex += `\\subsection*{${escapeLatex(card.title)}}\n\n`;
+
+    instances.forEach((instance, instanceIndex) => {
+      const answers = card.questions
+        .filter((question) => shouldShowQuestion(question.id, instance))
+        .map((question) => instance[question.id])
+        .filter((answer) => answer && answer.trim());
+
+      if (!includeEmpty && answers.length === 0) return;
+
+      const instanceLabel =
+        templateId === "ai-disclosure" ? "AI Tool" : "Data Source";
+      if (instances.length > 1) {
+        latex += `\\textbf{${instanceLabel} ${instanceIndex + 1}:} `;
+      }
+
+      if (answers.length > 0) {
+        latex += `${escapeLatex(answers.join(" "))}\n\n`;
+      } else {
+        latex += `\\textit{No answer}\n\n`;
+      }
+    });
+  };
+
+  template.sectionGroups.forEach((group) => {
+    if (group.title) {
+      latex += `\\section*{${escapeLatex(group.title)}}\n\n`;
+    }
+
+    group.sectionIds.forEach((sectionId) => {
+      const card = template.sections.find((s) => s.id === sectionId);
+      if (card) {
+        renderCardSummary(card);
+      }
+    });
+  });
+
+  latex += `\\end{document}\n`;
+  return latex;
+}
+
+export function generateLatex(
+  formTitle: string,
+  formData: Record<string, any>,
+  instancesData: Record<string, Record<string, any>[]> = {},
+  format: "detailed" | "summary",
+  includeEmpty: boolean = true,
+  templateId: string = DEFAULT_TEMPLATE_ID,
+): Blob {
+  const content =
+    format === "summary"
+      ? generateSummaryLatex(
+          formTitle,
+          formData,
+          instancesData,
+          includeEmpty,
+          templateId,
+        )
+      : generateDetailedLatex(
+          formTitle,
+          formData,
+          instancesData,
+          includeEmpty,
+          templateId,
+        );
+
+  return new Blob([content], { type: "application/x-latex;charset=utf-8" });
+}

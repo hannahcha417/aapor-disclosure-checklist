@@ -19,7 +19,11 @@ import {
 import { createForm, updateForm, publishForm } from "../../../utils/forms";
 import { FormPDF } from "../../../utils/FormPDF";
 import { FormPDFSummary } from "../../../utils/FormPDFSummary";
-import { generateDocx, generateTxt } from "../../../utils/exportUtils";
+import {
+  generateDocx,
+  generateTxt,
+  generateLatex,
+} from "../../../utils/exportUtils";
 import "./FormPage.css";
 
 // TODO: Put sections into tooltips
@@ -63,9 +67,9 @@ function FormPage({
   const [exportFormat, setExportFormat] = useState<"detailed" | "summary">(
     "detailed",
   );
-  const [exportFileType, setExportFileType] = useState<"pdf" | "docx" | "txt">(
-    "pdf",
-  );
+  const [exportFileType, setExportFileType] = useState<
+    "pdf" | "docx" | "txt" | "tex"
+  >("pdf");
   const [includeEmpty, setIncludeEmpty] = useState(true);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
@@ -300,6 +304,16 @@ function FormPage({
           templateId,
         );
         saveAs(blob, `${baseFileName}${suffix}.txt`);
+      } else if (exportFileType === "tex") {
+        const blob = generateLatex(
+          formTitle,
+          formData,
+          instancesData,
+          exportFormat,
+          includeEmpty,
+          templateId,
+        );
+        saveAs(blob, `${baseFileName}${suffix}.tex`);
       }
     } catch (error) {
       console.error("Error generating export:", error);
@@ -575,12 +589,15 @@ function FormPage({
               <select
                 value={exportFileType}
                 onChange={(e) =>
-                  setExportFileType(e.target.value as "pdf" | "docx" | "txt")
+                  setExportFileType(
+                    e.target.value as "pdf" | "docx" | "txt" | "tex",
+                  )
                 }
               >
                 <option value="pdf">PDF</option>
                 <option value="docx">Word (DOCX)</option>
                 <option value="txt">Text (TXT)</option>
+                <option value="tex">LaTeX (TEX)</option>
               </select>
             </div>
           </div>
