@@ -124,10 +124,11 @@ function ExpandableCard({
       instanceLabel = "Data Source";
     }
 
-    // For AI disclosure, always show the instance header with role label
+    // For AI disclosure, we no longer show instance headers inside cards
+    // since each use case is already wrapped in its own section with a header
     // For other templates, only show when multiple instances exist
     const showInstanceHeader =
-      templateId === "ai-disclosure" || instances.length > 1;
+      templateId !== "ai-disclosure" && instances.length > 1;
 
     return (
       <div key={instanceIndex} className="card-instance">

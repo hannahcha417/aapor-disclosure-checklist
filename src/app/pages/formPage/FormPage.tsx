@@ -701,7 +701,12 @@ function FormPage({
                               }}
                               showAddButton={false}
                               // Pass role for conditional question logic (q13 interviewer check)
-                              roleLabels={[roleLabel]}
+                              // Don't pass roleLabels for model-details (4a) to hide use case wrapper
+                              roleLabels={
+                                sectionId === "model-details"
+                                  ? undefined
+                                  : [roleLabel]
+                              }
                             />
                           );
                         })}

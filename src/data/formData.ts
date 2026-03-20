@@ -27,12 +27,7 @@ export const cardSections: CardData[] = [
         id: "q1",
         label: "How was the AI tool used?",
         type: "radio",
-        options: [
-          "Interviewer",
-          "Respondent",
-          "Analyst",
-          "Other",
-        ],
+        options: ["Interviewer", "Respondent", "Analyst", "Other"],
         optionTooltips: {
           Interviewer:
             "AI asking questions or adding follow-up questions in response to answers",
