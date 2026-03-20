@@ -7,6 +7,7 @@ function shouldShowQuestion(
   questionId: string,
   instance: Record<string, any>,
   role?: string, // Role from tasks-performed for this instance
+  templateId?: string, // Template ID to check which conditionals apply
 ): boolean {
   // AI Disclosure form conditionals:
   // q6 (Instrument/Interface) and q7 (Disclosure Possible) only show if q5 is third-party
@@ -22,13 +23,15 @@ function shouldShowQuestion(
   }
   // q18 (Fine-Tuning Details) only shows if q17 is "Yes"
   if (questionId === "q18" && instance["q17"] !== "Yes") return false;
-  // AAPOR form conditionals:
-  // q21 is conditional on q20 being "Yes"
-  if (questionId === "q21" && instance["q20"] !== "Yes") return false;
-  // q23 is conditional on q22 being "Yes"
-  if (questionId === "q23" && instance["q22"] !== "Yes") return false;
-  // q25 is conditional on q24 being "Yes"
-  if (questionId === "q25" && instance["q24"] !== "Yes") return false;
+  // AAPOR form conditionals (only for non-AI-disclosure templates):
+  if (templateId !== "ai-disclosure") {
+    // q21 is conditional on q20 being "Yes"
+    if (questionId === "q21" && instance["q20"] !== "Yes") return false;
+    // q23 is conditional on q22 being "Yes"
+    if (questionId === "q23" && instance["q22"] !== "Yes") return false;
+    // q25 is conditional on q24 being "Yes"
+    if (questionId === "q25" && instance["q24"] !== "Yes") return false;
+  }
   return true;
 }
 
@@ -160,7 +163,12 @@ export const FormPDFSummary = ({
   ) => {
     const answers = card.questions
       .filter((question) =>
-        shouldShowQuestion(question.id, instance, getRole(instanceIndex)),
+        shouldShowQuestion(
+          question.id,
+          instance,
+          getRole(instanceIndex),
+          templateId,
+        ),
       )
       .map((question) => instance[question.id])
       .filter((answer) => answer && answer.trim());
@@ -252,7 +260,12 @@ export const FormPDFSummary = ({
         {instances.map((instance, idx) => {
           const answers = card.questions
             .filter((question) =>
-              shouldShowQuestion(question.id, instance, getRole(idx)),
+              shouldShowQuestion(
+                question.id,
+                instance,
+                getRole(idx),
+                templateId,
+              ),
             )
             .map((question) => instance[question.id])
             .filter((answer) => answer && answer.trim());

@@ -175,17 +175,20 @@ function ExpandableCard({
           }
 
           // Conditionally render follow-up questions for AAPOR Required Disclosure form
-          // Panel Information: q21 only shows if q20 is "Yes"
-          if (question.id === "q21" && instance["q20"] !== "Yes") {
-            return null;
-          }
-          // Interviewer or Coders: q23 only shows if q22 is "Yes"
-          if (question.id === "q23" && instance["q22"] !== "Yes") {
-            return null;
-          }
-          // Eligibility Screening: q25 only shows if q24 is "Yes"
-          if (question.id === "q25" && instance["q24"] !== "Yes") {
-            return null;
+          // These conditionals only apply to non-AI-disclosure templates
+          if (templateId !== "ai-disclosure") {
+            // Panel Information: q21 only shows if q20 is "Yes"
+            if (question.id === "q21" && instance["q20"] !== "Yes") {
+              return null;
+            }
+            // Interviewer or Coders: q23 only shows if q22 is "Yes"
+            if (question.id === "q23" && instance["q22"] !== "Yes") {
+              return null;
+            }
+            // Eligibility Screening: q25 only shows if q24 is "Yes"
+            if (question.id === "q25" && instance["q24"] !== "Yes") {
+              return null;
+            }
           }
 
           // Custom numbering for access-infrastructure section

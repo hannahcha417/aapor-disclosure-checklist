@@ -7,6 +7,7 @@ function shouldShowQuestion(
   questionId: string,
   instance: Record<string, any>,
   role?: string, // Role from tasks-performed (q1) for this instance
+  templateId?: string, // Template ID to check which conditionals apply
 ): boolean {
   // AI Disclosure form conditionals:
   // q6 (Instrument/Interface) and q7 (Disclosure Possible) only show if q5 is "Embedded in third-party platform/tool"
@@ -27,18 +28,20 @@ function shouldShowQuestion(
   if (questionId === "q18" && instance["q17"] !== "Yes") {
     return false;
   }
-  // AAPOR Required Disclosure form conditional questions
-  // Panel Information: q21 only shows if q20 is "Yes"
-  if (questionId === "q21" && instance["q20"] !== "Yes") {
-    return false;
-  }
-  // Interviewer or Coders: q23 only shows if q22 is "Yes"
-  if (questionId === "q23" && instance["q22"] !== "Yes") {
-    return false;
-  }
-  // Eligibility Screening: q25 only shows if q24 is "Yes"
-  if (questionId === "q25" && instance["q24"] !== "Yes") {
-    return false;
+  // AAPOR Required Disclosure form conditional questions (only for non-AI-disclosure templates)
+  if (templateId !== "ai-disclosure") {
+    // Panel Information: q21 only shows if q20 is "Yes"
+    if (questionId === "q21" && instance["q20"] !== "Yes") {
+      return false;
+    }
+    // Interviewer or Coders: q23 only shows if q22 is "Yes"
+    if (questionId === "q23" && instance["q22"] !== "Yes") {
+      return false;
+    }
+    // Eligibility Screening: q25 only shows if q24 is "Yes"
+    if (questionId === "q25" && instance["q24"] !== "Yes") {
+      return false;
+    }
   }
   return true;
 }
@@ -135,7 +138,14 @@ function generateDetailedContent(
       const answer = instance[question.id];
 
       // Skip conditional questions that shouldn't be shown
-      if (!shouldShowQuestion(question.id, instance, getRole(instanceIndex)))
+      if (
+        !shouldShowQuestion(
+          question.id,
+          instance,
+          getRole(instanceIndex),
+          templateId,
+        )
+      )
         return;
 
       // Skip unanswered questions if includeEmpty is false
@@ -273,7 +283,10 @@ function generateDetailedContent(
 
         card.questions.forEach((question) => {
           const answer = instance[question.id];
-          if (!shouldShowQuestion(question.id, instance, getRole(idx))) return;
+          if (
+            !shouldShowQuestion(question.id, instance, getRole(idx), templateId)
+          )
+            return;
           if (!includeEmpty && !answer?.trim()) return;
 
           paragraphs.push(
@@ -379,7 +392,12 @@ function generateSummaryContent(
     // Collect all non-empty answers for this instance, filtering out conditional questions
     const answers = card.questions
       .filter((question) =>
-        shouldShowQuestion(question.id, instance, getRole(instanceIndex)),
+        shouldShowQuestion(
+          question.id,
+          instance,
+          getRole(instanceIndex),
+          templateId,
+        ),
       )
       .map((question) => instance[question.id])
       .filter((answer) => answer && answer.trim());
@@ -488,7 +506,7 @@ function generateSummaryContent(
       instances.forEach((instance, idx) => {
         const answers = card.questions
           .filter((question) =>
-            shouldShowQuestion(question.id, instance, getRole(idx)),
+            shouldShowQuestion(question.id, instance, getRole(idx), templateId),
           )
           .map((question) => instance[question.id])
           .filter((answer) => answer && answer.trim());
@@ -643,7 +661,14 @@ function generateDetailedText(
 
     card.questions.forEach((question) => {
       const answer = instance[question.id];
-      if (!shouldShowQuestion(question.id, instance, getRole(instanceIndex)))
+      if (
+        !shouldShowQuestion(
+          question.id,
+          instance,
+          getRole(instanceIndex),
+          templateId,
+        )
+      )
         return;
       if (!includeEmpty && !answer?.trim()) return;
 
@@ -706,7 +731,12 @@ function generateDetailedText(
         card.questions.forEach((question) => {
           const answer = instance[question.id];
           if (
-            !shouldShowQuestion(question.id, instance, getRole(instanceIndex))
+            !shouldShowQuestion(
+              question.id,
+              instance,
+              getRole(instanceIndex),
+              templateId,
+            )
           )
             return;
           if (!includeEmpty && !answer?.trim()) return;
@@ -778,7 +808,12 @@ function generateSummaryText(
   ) => {
     const answers = card.questions
       .filter((question) =>
-        shouldShowQuestion(question.id, instance, getRole(instanceIndex)),
+        shouldShowQuestion(
+          question.id,
+          instance,
+          getRole(instanceIndex),
+          templateId,
+        ),
       )
       .map((question) => instance[question.id])
       .filter((answer) => answer && answer.trim());
@@ -839,7 +874,12 @@ function generateSummaryText(
       instances.forEach((instance, instanceIndex) => {
         const answers = card.questions
           .filter((question) =>
-            shouldShowQuestion(question.id, instance, getRole(instanceIndex)),
+            shouldShowQuestion(
+              question.id,
+              instance,
+              getRole(instanceIndex),
+              templateId,
+            ),
           )
           .map((question) => instance[question.id])
           .filter((answer) => answer && answer.trim());
@@ -982,7 +1022,14 @@ function generateDetailedLatex(
 
     card.questions.forEach((question) => {
       const answer = instance[question.id];
-      if (!shouldShowQuestion(question.id, instance, getRole(instanceIndex)))
+      if (
+        !shouldShowQuestion(
+          question.id,
+          instance,
+          getRole(instanceIndex),
+          templateId,
+        )
+      )
         return;
       if (!includeEmpty && !answer?.trim()) return;
 
@@ -1049,7 +1096,12 @@ function generateDetailedLatex(
         card.questions.forEach((question) => {
           const answer = instance[question.id];
           if (
-            !shouldShowQuestion(question.id, instance, getRole(instanceIndex))
+            !shouldShowQuestion(
+              question.id,
+              instance,
+              getRole(instanceIndex),
+              templateId,
+            )
           )
             return;
           if (!includeEmpty && !answer?.trim()) return;
@@ -1135,7 +1187,12 @@ function generateSummaryLatex(
   ) => {
     const answers = card.questions
       .filter((question) =>
-        shouldShowQuestion(question.id, instance, getRole(instanceIndex)),
+        shouldShowQuestion(
+          question.id,
+          instance,
+          getRole(instanceIndex),
+          templateId,
+        ),
       )
       .map((question) => instance[question.id])
       .filter((answer) => answer && answer.trim());
@@ -1196,7 +1253,12 @@ function generateSummaryLatex(
       instances.forEach((instance, instanceIndex) => {
         const answers = card.questions
           .filter((question) =>
-            shouldShowQuestion(question.id, instance, getRole(instanceIndex)),
+            shouldShowQuestion(
+              question.id,
+              instance,
+              getRole(instanceIndex),
+              templateId,
+            ),
           )
           .map((question) => instance[question.id])
           .filter((answer) => answer && answer.trim());

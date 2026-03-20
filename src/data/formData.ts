@@ -248,7 +248,7 @@ export const cardSections: CardData[] = [
       {
         id: "q21",
         label:
-          "Prompts: While exact prompts are preferred, researchers can report high-level, plausibly abstracted prompts used to guide the model.",
+          "Prompts: While exact prompts are preferred, researchers can report high-level plausibly abstracted prompts used to guide the model.",
         type: "textarea",
         placeholder: "Type your answer here.",
         tooltip: "",
@@ -257,7 +257,7 @@ export const cardSections: CardData[] = [
       {
         id: "q22",
         label:
-          "System-Wide Instructions: Any global settings or instructions used to guide AI behavior.",
+          "System-Wide Instructions: Any global settings or instructions guiding AI behavior.",
         type: "textarea",
         placeholder: "Type your answer here.",
         tooltip: "",
