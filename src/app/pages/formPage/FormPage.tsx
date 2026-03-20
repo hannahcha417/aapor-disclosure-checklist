@@ -639,10 +639,13 @@ function FormPage({
                           const card = getCardById(sectionId);
                           if (!card) return null;
 
-                          // Conditional: hide "model-details" (4a) unless:
+                          // Conditional: hide "model-details" (4a) and "core-prompts" (4b) unless:
                           // - q5 = Direct or First-party, OR
                           // - q5 = Third-party AND q7 = Yes
-                          if (sectionId === "model-details") {
+                          if (
+                            sectionId === "model-details" ||
+                            sectionId === "core-prompts"
+                          ) {
                             const accessMethod =
                               instancesData["access-infrastructure"]?.[
                                 useCaseIndex
@@ -701,9 +704,10 @@ function FormPage({
                               }}
                               showAddButton={false}
                               // Pass role for conditional question logic (q13 interviewer check)
-                              // Don't pass roleLabels for model-details (4a) to hide use case wrapper
+                              // Don't pass roleLabels for model-details (4a) or core-prompts (4b) to hide use case wrapper
                               roleLabels={
-                                sectionId === "model-details"
+                                sectionId === "model-details" ||
+                                sectionId === "core-prompts"
                                   ? undefined
                                   : [roleLabel]
                               }

@@ -241,14 +241,14 @@ export const cardSections: CardData[] = [
   },
   {
     id: "core-prompts",
-    title: "5. Core Prompts or Instructions",
+    title: "4b. Core Prompts or Instructions",
     summary:
       "Prompts shape AI behavior. If instructions were vague or biased, outputs may reflect those biases. Exact prompts and system-wide instructions allow others to evaluate whether wording or framing introduced systematic error. For example, a prompt emphasizing concise answers might truncate nuanced responses, affecting data quality.",
     questions: [
       {
         id: "q21",
         label:
-          "Prompts: While exact prompts are preferred, researchers can report high-level plausibly abstracted prompts used to guide the model.",
+          "Prompts: While exact prompts are preferred, researchers can report high-level, plausibly abstracted prompts used to guide the model.",
         type: "textarea",
         placeholder: "Type your answer here.",
         tooltip: "",
@@ -257,7 +257,7 @@ export const cardSections: CardData[] = [
       {
         id: "q22",
         label:
-          "System-Wide Instructions: Any global settings or instructions guiding AI behavior.",
+          "System-Wide Instructions: Any global settings or instructions used to guide AI behavior.",
         type: "textarea",
         placeholder: "Type your answer here.",
         tooltip: "",

@@ -47,10 +47,10 @@ function shouldShowSectionForInstance(
   instancesData: Record<string, Record<string, any>[]>,
   instanceIndex: number,
 ): boolean {
-  // model-details (4a) only shows if:
+  // model-details (4a) and core-prompts (4b) only show if:
   // - q5 = Direct or First-party, OR
   // - q5 = Third-party AND q7 = Yes
-  if (sectionId === "model-details") {
+  if (sectionId === "model-details" || sectionId === "core-prompts") {
     const accessMethod =
       instancesData["access-infrastructure"]?.[instanceIndex]?.["q5"] || "";
     const disclosurePossible =
