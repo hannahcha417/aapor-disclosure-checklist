@@ -12,15 +12,56 @@ import "./PublicFormView.css";
 function shouldShowQuestion(
   questionId: string,
   instance: Record<string, any>,
+  role?: string, // Role from tasks-performed for this instance
 ): boolean {
-  // q9 is conditional on q8 being "Yes"
-  if (questionId === "q9" && instance["q8"] !== "Yes") return false;
+  // AI Disclosure form conditionals:
+  // q6 (Instrument/Interface) and q7 (Disclosure Possible) only show if q5 is third-party
+  if (
+    (questionId === "q6" || questionId === "q7") &&
+    instance["q5"] !== "Embedded in third-party platform/tool"
+  )
+    return false;
+  // q13 (AI as Interviewer) only shows if the role is "Interviewer"
+  if (questionId === "q13") {
+    const instanceRole = role || instance["q1"];
+    if (instanceRole !== "Interviewer") return false;
+  }
+  // q18 (Fine-Tuning Details) only shows if q17 is "Yes"
+  if (questionId === "q18" && instance["q17"] !== "Yes") return false;
+  // AAPOR form conditionals:
   // q21 is conditional on q20 being "Yes"
   if (questionId === "q21" && instance["q20"] !== "Yes") return false;
   // q23 is conditional on q22 being "Yes"
   if (questionId === "q23" && instance["q22"] !== "Yes") return false;
   // q25 is conditional on q24 being "Yes"
   if (questionId === "q25" && instance["q24"] !== "Yes") return false;
+  return true;
+}
+
+// Helper function to check if a section should be shown for a specific instance
+function shouldShowSectionForInstance(
+  sectionId: string,
+  instancesData: Record<string, Record<string, any>[]>,
+  instanceIndex: number,
+): boolean {
+  // model-details (4a) only shows if:
+  // - q5 = Direct or First-party, OR
+  // - q5 = Third-party AND q7 = Yes
+  if (sectionId === "model-details") {
+    const accessMethod =
+      instancesData["access-infrastructure"]?.[instanceIndex]?.["q5"] || "";
+    const disclosurePossible =
+      instancesData["access-infrastructure"]?.[instanceIndex]?.["q7"] || "";
+
+    const isDirect = accessMethod.includes("Direct");
+    const isFirstParty = accessMethod.includes("First-party");
+    const isThirdPartyWithDisclosure =
+      accessMethod.includes("third-party") && disclosurePossible === "Yes";
+
+    if (!isDirect && !isFirstParty && !isThirdPartyWithDisclosure) {
+      return false;
+    }
+  }
   return true;
 }
 
@@ -35,16 +76,40 @@ function CollapsibleCard({
   instances,
   formData,
   templateId,
+  roleLabels,
+  instancesData,
 }: {
   card: CardData;
   instances: Record<string, any>[];
   formData: Record<string, any>;
   templateId: string;
+  roleLabels?: string[];
+  instancesData?: Record<string, Record<string, any>[]>;
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
 
-  const actualInstances =
+  const baseInstances =
     instances && instances.length > 0 ? instances : [formData];
+
+  // Filter instances based on section visibility (for conditional sections like model-details)
+  const visibleInstanceIndices = baseInstances
+    .map((_, idx) => idx)
+    .filter(
+      (idx) =>
+        !instancesData ||
+        shouldShowSectionForInstance(card.id, instancesData, idx),
+    );
+
+  // If no visible instances, don't render the card
+  if (visibleInstanceIndices.length === 0) return null;
+
+  // Get role label for an instance
+  const getRoleLabel = (instanceIndex: number): string => {
+    if (roleLabels && roleLabels[instanceIndex]) {
+      return `${roleLabels[instanceIndex]} Use Case`;
+    }
+    return templateId === "ai-disclosure" ? "AI Tool" : "Data Source";
+  };
 
   return (
     <div className="public-card">
@@ -59,21 +124,29 @@ function CollapsibleCard({
       </div>
       {isExpanded && (
         <div className="public-card-content">
-          {actualInstances.map((instance, idx) => {
-            const instanceLabel =
-              templateId === "ai-disclosure" ? "AI Tool" : "Data Source";
+          {visibleInstanceIndices.map((originalIdx) => {
+            const instance = baseInstances[originalIdx];
+            const instanceLabel = getRoleLabel(originalIdx);
             return (
-              <div key={idx} className="public-instance">
-                {actualInstances.length > 1 && (
+              <div key={originalIdx} className="public-instance">
+                {baseInstances.length > 1 && (
                   <div className="public-instance-label">
-                    {instanceLabel} {idx + 1}
+                    {instanceLabel} {originalIdx + 1}
                   </div>
                 )}
                 {card.questions.map((question) => {
                   const answer = instance[question.id];
 
                   // Skip conditional questions that shouldn't be shown
-                  if (!shouldShowQuestion(question.id, instance)) return null;
+                  // Pass role from roleLabels for this instance
+                  if (
+                    !shouldShowQuestion(
+                      question.id,
+                      instance,
+                      roleLabels?.[originalIdx],
+                    )
+                  )
+                    return null;
 
                   return (
                     <div key={question.id} className="public-question">
@@ -169,26 +242,38 @@ function PublicFormView({ publicId, onBack }: PublicFormViewProps) {
       </header>
 
       <main className="public-main">
-        {template?.sectionGroups.map((group) => (
-          <section key={group.title || "default"} className="public-section">
-            {group.title && (
-              <h2 className="public-section-title">{group.title}</h2>
-            )}
-            {group.sectionIds.map((sectionId) => {
-              const card = template.sections.find((s) => s.id === sectionId);
-              if (!card) return null;
-              return (
-                <CollapsibleCard
-                  key={card.id}
-                  card={card}
-                  instances={instancesData[card.id]}
-                  formData={formData}
-                  templateId={templateId}
-                />
-              );
-            })}
-          </section>
-        ))}
+        {template?.sectionGroups.map((group) => {
+          // Get role labels from first card for AI disclosure template
+          const roleLabels =
+            templateId === "ai-disclosure"
+              ? (instancesData["tasks-performed"] || []).map(
+                  (instance) => instance["q1"] || "",
+                )
+              : undefined;
+
+          return (
+            <section key={group.title || "default"} className="public-section">
+              {group.title && (
+                <h2 className="public-section-title">{group.title}</h2>
+              )}
+              {group.sectionIds.map((sectionId) => {
+                const card = template.sections.find((s) => s.id === sectionId);
+                if (!card) return null;
+                return (
+                  <CollapsibleCard
+                    key={card.id}
+                    card={card}
+                    instances={instancesData[card.id]}
+                    formData={formData}
+                    templateId={templateId}
+                    roleLabels={roleLabels}
+                    instancesData={instancesData}
+                  />
+                );
+              })}
+            </section>
+          );
+        })}
       </main>
 
       <footer className="public-footer">

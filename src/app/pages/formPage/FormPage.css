@@ -261,7 +261,9 @@ section p {
   font-size: 1.2rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease;
   max-width: 200px;
 }
 
@@ -544,4 +546,88 @@ section p {
 .author-input:focus {
   outline: none;
   border-color: #667eea;
+}
+
+/* Use Case Section Styles (for AI Disclosure template) */
+.use-case-section {
+  background: #f8f9fa;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.use-case-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #667eea;
+}
+
+.use-case-title {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.remove-use-case-btn {
+  padding: 0.5rem 1rem;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.remove-use-case-btn:hover {
+  background: #c82333;
+}
+
+.use-case-group {
+  margin-bottom: 1.5rem;
+}
+
+.use-case-group-title {
+  font-size: 1.1rem;
+  color: #555;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.use-case-group-description {
+  font-size: 0.95rem;
+  color: #666;
+  margin: 0 0 1.25rem 0;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.add-use-case-container {
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0;
+}
+
+.add-use-case-btn {
+  padding: 1rem 2rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-use-case-btn:hover {
+  background: #5a6fd6;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }

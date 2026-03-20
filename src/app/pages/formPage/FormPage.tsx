@@ -83,6 +83,20 @@ function FormPage({
     return template?.sections.find((s) => s.id === cardId);
   };
 
+  // Initialize instancesData with one instance per card when template loads
+  useEffect(() => {
+    if (template && Object.keys(instancesData).length === 0) {
+      const allSectionIds = template.sectionGroups.flatMap(
+        (group) => group.sectionIds,
+      );
+      const initialData: Record<string, Record<string, any>[]> = {};
+      allSectionIds.forEach((sectionId) => {
+        initialData[sectionId] = [{}];
+      });
+      setInstancesData(initialData);
+    }
+  }, [template]);
+
   // Public sharing state
   const [publicId, setPublicId] = useState<string | undefined>(initialPublicId);
   const [isPublic, setIsPublic] = useState(initialIsPublic);
@@ -248,6 +262,44 @@ function FormPage({
       ...prev,
       [cardId]: instances,
     }));
+  };
+
+  // Handler for adding a global instance across ALL cards (for AI disclosure)
+  const handleAddGlobalInstance = () => {
+    if (!template) return;
+
+    const allSectionIds = template.sectionGroups.flatMap(
+      (group) => group.sectionIds,
+    );
+
+    setInstancesData((prev) => {
+      const newData = { ...prev };
+      allSectionIds.forEach((sectionId) => {
+        const existingInstances = prev[sectionId] || [{}];
+        newData[sectionId] = [...existingInstances, {}];
+      });
+      return newData;
+    });
+  };
+
+  // Handler for removing a global instance across ALL cards (for AI disclosure)
+  const handleRemoveGlobalInstance = (index: number) => {
+    if (!template) return;
+
+    const allSectionIds = template.sectionGroups.flatMap(
+      (group) => group.sectionIds,
+    );
+
+    setInstancesData((prev) => {
+      const newData = { ...prev };
+      allSectionIds.forEach((sectionId) => {
+        const existingInstances = prev[sectionId] || [{}];
+        if (existingInstances.length > 1) {
+          newData[sectionId] = existingInstances.filter((_, i) => i !== index);
+        }
+      });
+      return newData;
+    });
   };
 
   const handleExport = async () => {
@@ -543,32 +595,164 @@ function FormPage({
           )}
         </div>
 
-        {/* Dynamically render sections based on template */}
-        {template?.sectionGroups.map((group) => (
-          <section key={group.title}>
-            <h2>{group.title}</h2>
-            <p>{group.description}</p>
-            {group.sectionIds.map((sectionId) => {
-              const card = getCardById(sectionId);
-              if (!card) return null;
-              return (
-                <ExpandableCard
-                  key={sectionId}
-                  card={card}
-                  initialData={formData}
-                  instances={instancesData[sectionId]}
-                  templateId={templateId}
-                  onDataChange={(questionId, value) =>
-                    setFormData((prev) => ({ ...prev, [questionId]: value }))
-                  }
-                  onInstancesChange={(instances) =>
-                    handleInstancesChange(sectionId, instances)
-                  }
-                />
-              );
-            })}
-          </section>
-        ))}
+        {/* For AI Disclosure: render by USE CASE, each containing all sections */}
+        {templateId === "ai-disclosure" && template && (
+          <>
+            {(instancesData["tasks-performed"] || [{}]).map(
+              (_, useCaseIndex) => {
+                const roleLabel =
+                  instancesData["tasks-performed"]?.[useCaseIndex]?.["q1"] ||
+                  "AI Tool";
+                const useCaseTitle =
+                  `${roleLabel} Use Case ${(instancesData["tasks-performed"] || [{}]).length > 1 ? useCaseIndex + 1 : ""}`.trim();
+
+                return (
+                  <section key={useCaseIndex} className="use-case-section">
+                    <div className="use-case-header">
+                      <h2 className="use-case-title">{useCaseTitle}</h2>
+                      {(instancesData["tasks-performed"] || []).length > 1 && (
+                        <button
+                          type="button"
+                          className="remove-use-case-btn"
+                          onClick={() =>
+                            handleRemoveGlobalInstance(useCaseIndex)
+                          }
+                        >
+                          Remove Use Case
+                        </button>
+                      )}
+                    </div>
+
+                    {template.sectionGroups.map((group) => (
+                      <div key={group.title} className="use-case-group">
+                        {group.title && (
+                          <h3 className="use-case-group-title">
+                            {group.title}
+                          </h3>
+                        )}
+                        {group.description && (
+                          <p className="use-case-group-description">
+                            {group.description}
+                          </p>
+                        )}
+                        {group.sectionIds.map((sectionId) => {
+                          const card = getCardById(sectionId);
+                          if (!card) return null;
+
+                          // Conditional: hide "model-details" (4a) unless:
+                          // - q5 = Direct or First-party, OR
+                          // - q5 = Third-party AND q7 = Yes
+                          if (sectionId === "model-details") {
+                            const accessMethod =
+                              instancesData["access-infrastructure"]?.[
+                                useCaseIndex
+                              ]?.["q5"] || "";
+                            const disclosurePossible =
+                              instancesData["access-infrastructure"]?.[
+                                useCaseIndex
+                              ]?.["q7"] || "";
+
+                            const isDirect = accessMethod.includes("Direct");
+                            const isFirstParty =
+                              accessMethod.includes("First-party");
+                            const isThirdPartyWithDisclosure =
+                              accessMethod.includes("third-party") &&
+                              disclosurePossible === "Yes";
+
+                            if (
+                              !isDirect &&
+                              !isFirstParty &&
+                              !isThirdPartyWithDisclosure
+                            ) {
+                              return null;
+                            }
+                          }
+
+                          return (
+                            <ExpandableCard
+                              key={sectionId}
+                              card={card}
+                              initialData={formData}
+                              instances={
+                                instancesData[sectionId]?.[useCaseIndex]
+                                  ? [instancesData[sectionId][useCaseIndex]]
+                                  : [{}]
+                              }
+                              templateId={templateId}
+                              onDataChange={(questionId, value) =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  [questionId]: value,
+                                }))
+                              }
+                              onInstancesChange={(instances) => {
+                                // Update just this use case's instance for this card
+                                setInstancesData((prev) => {
+                                  const cardInstances = [
+                                    ...(prev[sectionId] || []),
+                                  ];
+                                  cardInstances[useCaseIndex] =
+                                    instances[0] || {};
+                                  return {
+                                    ...prev,
+                                    [sectionId]: cardInstances,
+                                  };
+                                });
+                              }}
+                              showAddButton={false}
+                              // Pass role for conditional question logic (q13 interviewer check)
+                              roleLabels={[roleLabel]}
+                            />
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </section>
+                );
+              },
+            )}
+
+            <div className="add-use-case-container">
+              <button
+                type="button"
+                className="add-use-case-btn"
+                onClick={handleAddGlobalInstance}
+              >
+                + Add Another Use Case
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* For AAPOR template: render by SECTION (original behavior) */}
+        {templateId !== "ai-disclosure" &&
+          template?.sectionGroups.map((group) => (
+            <section key={group.title}>
+              <h2>{group.title}</h2>
+              <p>{group.description}</p>
+              {group.sectionIds.map((sectionId) => {
+                const card = getCardById(sectionId);
+                if (!card) return null;
+
+                return (
+                  <ExpandableCard
+                    key={sectionId}
+                    card={card}
+                    initialData={formData}
+                    instances={instancesData[sectionId]}
+                    templateId={templateId}
+                    onDataChange={(questionId, value) =>
+                      setFormData((prev) => ({ ...prev, [questionId]: value }))
+                    }
+                    onInstancesChange={(instances) =>
+                      handleInstancesChange(sectionId, instances)
+                    }
+                    showAddButton={true}
+                  />
+                );
+              })}
+            </section>
+          ))}
 
         <div className="submit-container">
           <div className="export-options">

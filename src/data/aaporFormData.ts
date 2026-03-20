@@ -4,6 +4,7 @@ export interface Question {
   type: "text" | "textarea" | "radio" | "checkbox";
   placeholder?: string;
   options?: string[];
+  optionTooltips?: Record<string, string>;
   tooltip?: string;
   required?: boolean;
 }

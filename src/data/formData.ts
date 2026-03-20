@@ -1,9 +1,10 @@
-export interface Question {
+﻿export interface Question {
   id: string;
   label: string;
   type: "text" | "textarea" | "radio" | "checkbox";
   placeholder?: string;
   options?: string[];
+  optionTooltips?: Record<string, string>;
   tooltip?: string;
   required?: boolean;
 }
@@ -25,10 +26,26 @@ export const cardSections: CardData[] = [
       {
         id: "q1",
         label: "How was the AI tool used?",
-        type: "textarea",
-        placeholder: "Type your answer here.",
-        tooltip:
-          "Was AI used as a colleague helping to write the survey instrument, as an interviewer asking questions or even adding questions in response to answer, as a respondent simulating the target population, as an analyst cleaning or labelling or modelling the raw data, as briefer helping to create the report or other deliverable, or did AI work through multiple tasks?",
+        type: "radio",
+        options: [
+          "Interviewer",
+          "Respondent",
+          "Analyst",
+          "Colleague",
+          "Briefer",
+          "Other",
+        ],
+        optionTooltips: {
+          Interviewer:
+            "AI asking questions or adding follow-up questions in response to answers",
+          Respondent:
+            "AI simulating the target population or providing synthetic responses",
+          Analyst: "AI cleaning, labeling, or modeling the raw data",
+          Colleague:
+            "AI helping to write the survey instrument or research design",
+          Briefer: "AI helping to create the report or other deliverable",
+        },
+        tooltip: "",
         required: true,
       },
       {
@@ -46,12 +63,12 @@ export const cardSections: CardData[] = [
     id: "human-oversight",
     title: "2. Human Oversight or Validation",
     summary:
-      "Human review is a critical safeguard against AI-driven errors. Disclosing when and how oversight occurred shows whether potential mistakes—such as misinterpretation of responses or biased coding—were caught. Enhanced details (e.g., double-blind checks or statistical validation) indicate the rigor of error control. Without this, consumers cannot judge whether AI outputs were trusted blindly or verified systematically. What needs to be verified and how will evolve over time with model, infrastructure, and research into their validity.",
+      "Human review is a critical safeguard against AI-driven errors. Disclosing when and how oversight occurred shows whether potential mistakessuch as misinterpretation of responses or biased codingwere caught. Enhanced details (e.g., double-blind checks or statistical validation) indicate the rigor of error control. Without this, consumers cannot judge whether AI outputs were trusted blindly or verified systematically. What needs to be verified and how will evolve over time with model, infrastructure, and research into their validity.",
     questions: [
       {
         id: "q3",
         label:
-          " For which task(s) was AI output reviewed or validated by researchers?",
+          "For which task(s) was AI output reviewed or validated by researchers?",
         type: "textarea",
         placeholder: "Type your answer here.",
         tooltip:
@@ -70,196 +87,195 @@ export const cardSections: CardData[] = [
     ],
   },
   {
-    id: "model-details",
-    title: "4. Model Details",
+    id: "access-infrastructure",
+    title: "4. High-level Details (access and infrastructure)",
     summary:
-      "The model’s identity, version, and fine-tuning status matter because different models have different capabilities and biases. Proprietary models may lack transparency about training data, while open-source models might allow scrutiny. Custom configurations like temperature affect creativity and precision, influencing question phrasing or response generation. Reporting these settings helps explain variability and potential systematic bias in outputs.",
+      "How the AI was accessed (API vs. embedded tool) and the interface used can affect consistency and control. For instance, an interviewer bot embedded in a survey platform might introduce conversational bias differently than a static API call. Understanding the tooling context helps identify sources of error related to interaction design or technical constraints.",
     questions: [
       {
         id: "q5",
-        label: "What specific AI system was used?",
-        type: "textarea",
-        placeholder: "Type your answer here.",
-        tooltip: "e.g. GPT-4.0, GPT-5, etc",
+        label: "Method of Access: How was the model accessed?",
+        type: "radio",
+        options: [
+          "Direct (e.g., API)",
+          "First-party platform/tool (e.g., website chatbot)",
+          "Embedded in third-party platform/tool",
+        ],
+        tooltip: "",
         required: true,
       },
       {
         id: "q6",
         label:
-          "Was the AI open source (publicly available) or proprietary (owned by a company)?",
-        type: "radio",
-        options: ["Open Source", "Proprietary", "Mixed/Hybrid"],
+          "Instrument or Interface: Where and how was the AI embedded or interacted with?",
+        type: "textarea",
+        placeholder: "Type your answer here.",
+        tooltip:
+          "e.g., Qualtrics integration, custom dashboard, interviewer bot",
         required: true,
       },
       {
         id: "q7",
-        label: "When was the AI model used for the task?",
-        type: "textarea",
-        placeholder: "Type your answer here.",
-        tooltip: "e.g. November 18, 2025",
+        label:
+          "Disclosure Possible: Does the third-party disclose details of the model (i.e., do you have more information to disclose)?",
+        type: "radio",
+        options: ["Yes", "No", "Don't Know"],
         required: true,
       },
       {
         id: "q8",
-        label:
-          "Was the model fine-tuned (i.e. adjusting the AI to specialize in a certain task) for survey-related work?",
-        type: "radio",
-        options: ["Yes", "No"],
+        label: "Dates of Access/Use: When was the AI used for the task?",
+        type: "textarea",
+        placeholder: "Type your answer here.",
+        tooltip: "e.g., November 18, 2025",
         required: true,
       },
       {
         id: "q9",
         label:
-          "For finetuning, what data was used, and from what source(s)? If possible, please provide the link to access the data (e.g. Hugging Face dataset link), or cite the data's source.",
+          "Justification: Why was the specific model and access/tooling chosen?",
         type: "textarea",
         placeholder: "Type your answer here.",
+        tooltip:
+          "Some reasonable considerations include: performance, transparency, reproducibility, ethical considerations, cost, ease-of-use, no choice (i.e., model or access/tooling was the only option given some other constraint)",
         required: true,
       },
       {
         id: "q10",
-        label: "Provide the link to the official model documentation.",
+        label:
+          "Memory: Was the system stateful or stateless during interaction?",
         type: "textarea",
         placeholder: "Type your answer here.",
-        tooltip: "e.g. GPT-4.0, GPT-5, etc",
+        tooltip:
+          "i.e., does it remember previous interactions and let them affect future interactions. For instance, chat interfaces, especially those with a history, are stateful, while API calls are stateless.",
         required: true,
       },
       {
         id: "q11",
         label:
-          "If and how RAG was used to ground information, and if so, what documents were used.",
+          "Known Biases: Document any other known biases that could affect results.",
         type: "textarea",
         placeholder: "Type your answer here.",
         tooltip:
-          "e.g. RAG-powered the chatbot administering the survey, by using a catalog of approved questions",
-        required: true,
+          "e.g., cultural biases, language biases, demographic biases, all of which have been well documented in AI systems",
+        required: false,
       },
       {
         id: "q12",
         label:
-          "Custom Configuration Settings: Temperature, max tokens, seed, number of runs, or other variation off of the default settings.",
+          "Failure Modes: If and where the AI failed/was wrong, describe if you had to override it manually.",
         type: "textarea",
         placeholder: "Type your answer here.",
-        tooltip:
-          "Temperature controls creativity: lower = more precise, higher = more creative. Max tokens is the maximum length of AI output. Seed is a number that makes results reproducible. Number of runs is how many times the AI was ased to generate an output. Sample answer: temperature = 0.7, max tokens = 2,000, seed = 42, number of runs = 3",
-        required: true,
+        tooltip: "",
+        required: false,
+      },
+      {
+        id: "q13",
+        label: "AI as Interviewer: Can you release the interview archive?",
+        type: "textarea",
+        placeholder: "Type your answer here.",
+        tooltip: "Only applicable if AI was used as an interviewer",
+        required: false,
       },
     ],
   },
   {
-    id: "access-tooling-details",
-    title: "5. Access/Tooling Details",
+    id: "model-details",
+    title: "4a. Model Details",
     summary:
-      "How the AI was accessed (API vs. embedded tool) and the interface used can affect consistency and control. For instance, an interviewer bot embedded in a survey platform might introduce conversational bias differently than a static API call. Understanding the tooling context helps identify sources of error related to interaction design or technical constraints.",
+      "The model's identity, version, and fine-tuning status matter because different models have different capabilities and biases. Proprietary models may lack transparency about training data, while open-source models might allow scrutiny. Custom configurations like temperature affect creativity and precision, influencing question phrasing or response generation. Reporting these settings helps explain variability and potential systematic bias in outputs.",
     questions: [
       {
-        id: "q13",
-        label: "How was the model accessed?",
+        id: "q14",
+        label: "Model Name & Version: What specific AI system was used?",
         type: "textarea",
         placeholder: "Type your answer here.",
-        tooltip: "e.g. API, website, embedded in a platform",
+        tooltip: "e.g., GPT-4.0, GPT-5, etc.",
         required: true,
       },
       {
-        id: "q14",
+        id: "q15",
         label:
-          "Where and how was the AI embedded or interacted with (if applicable)?",
+          "Model Type: Is the AI open-source (publicly available) or proprietary (owned by a company)?",
+        type: "radio",
+        options: ["Open Source", "Proprietary", "Mixed/Hybrid"],
+        required: true,
+      },
+      {
+        id: "q16",
+        label: "Source URL: Provide the link to official model documentation.",
+        type: "textarea",
+        placeholder: "Type your answer here.",
+        tooltip: "",
+        required: true,
+      },
+      {
+        id: "q17",
+        label:
+          "Fine-Tuning Status: Was the model fine-tuned (i.e., adjusting the AI to specialize in a certain task) for survey-related work?",
+        type: "radio",
+        options: ["Yes", "No"],
+        required: true,
+      },
+      {
+        id: "q18",
+        label:
+          "Fine-Tuning Details: What data was used for fine-tuning, and from what source(s)?",
         type: "textarea",
         placeholder: "Type your answer here.",
         tooltip:
-          "e.g. Qualtrics integration, custom dashboard, interviewer bot",
+          "If possible, please provide the link to access the data (e.g., Hugging Face dataset link) or cite the data's source.",
         required: true,
+      },
+      {
+        id: "q19",
+        label:
+          "RAG Usage: If and how RAG was used to ground information, and if so, what documents were used.",
+        type: "textarea",
+        placeholder: "Type your answer here.",
+        tooltip:
+          "e.g., RAG-powered the chatbot administering the survey, by using a catalog of approved questions.",
+        required: true,
+      },
+      {
+        id: "q20",
+        label:
+          "Custom Configurations: Temperature, max tokens, seed, number of runs, or other variation off of the default settings.",
+        type: "textarea",
+        placeholder: "Type your answer here.",
+        tooltip:
+          "Temperature controls creativity: lower = more precise, higher = more creative. Max tokens is the maximum length of AI output. Seed is a number that makes results reproducible. Number of runs is how many times the AI was asked to generate an output. Sample answer: temperature = 0.7, max tokens = 2,000, seed = 42, number of runs = 3",
+        required: false,
       },
     ],
   },
   {
     id: "core-prompts",
-    title: "6. Core Prompts or Instructions",
+    title: "5. Core Prompts or Instructions",
     summary:
-      "Prompts shape AI behavior. If instructions were vague or biased, outputs may reflect those biases. Exact prompts and system-wide instructions allow others to evaluate whether wording or framing introduced systematic error. For example, a prompt emphasizing “concise answers” might truncate nuanced responses, affecting data quality",
+      "Prompts shape AI behavior. If instructions were vague or biased, outputs may reflect those biases. Exact prompts and system-wide instructions allow others to evaluate whether wording or framing introduced systematic error. For example, a prompt emphasizing concise answers might truncate nuanced responses, affecting data quality.",
     questions: [
       {
-        id: "q15",
+        id: "q21",
         label:
-          "While exact prompts are preferred, researchers can report high-level, plausibly abstracted prompts used to guide the model.",
+          "Prompts: While exact prompts are preferred, researchers can report high-level, plausibly abstracted prompts used to guide the model.",
         type: "textarea",
         placeholder: "Type your answer here.",
-        tooltip: "Placeholder",
+        tooltip: "",
         required: true,
       },
       {
-        id: "q16",
-        label:
-          "If available, please provide the exact prompts used to guide the model.",
-        type: "textarea",
-        placeholder: "Type your answer here.",
-        tooltip: "",
-        required: false,
-      },
-      {
-        id: "q17",
-        label:
-          "If applicable, please provide any global settings or instructions used to guide AI behavior.",
-        type: "textarea",
-        placeholder: "Type your answer here.",
-        tooltip: "",
-        required: false,
-      },
-    ],
-  },
-  {
-    id: "additional-enhanced-disclosures",
-    title: "7. Additional Enhanced Disclosures",
-    summary:
-      "Code reveals whether automation introduced errors through implementation choices. For AI as interviewer, variability in questions can lead to measurement error, and documenting this helps assess comparability. For memory, stateful systems may carry context across interactions, introducing bias if prior responses influence later ones. Known biases help explicitly acknowledging biases (e.g. language or cultural skew), helping readers interpret findings cautiously.",
-    questions: [
-      {
-        id: "q18",
-        label: "Please provide any scripts or code used to call the AI.",
-        type: "textarea",
-        placeholder: "Type your answer here.",
-        tooltip: "",
-        required: false,
-      },
-      {
-        id: "q19",
-        label:
-          "If an AI tool was used as an interviewer, describe the characterization of variance in questions asked or representative samples of conversations.",
-        type: "textarea",
-        placeholder: "Type your answer here.",
-        tooltip: "",
-        required: false,
-      },
-      {
-        id: "q20",
-        label: "Was the system stateful or stateless during interaction?",
-        type: "textarea",
-        placeholder: "Type your answer here.",
-        tooltip:
-          "e.g. does the AI tool remember previous interactions and let them affect future interactions?",
-        required: false,
-      },
-      {
-        id: "q21",
-        label: "Document any known biases that could affect survey results.",
-        type: "textarea",
-        placeholder: "Type your answer here.",
-        tooltip:
-          "e.g. cultural biases, language biases, demographic biases, all of which have been well documented in AI systems",
-        required: false,
-      },
-      {
         id: "q22",
-        label: "Why was the specific model and access/tooling chosen?",
+        label:
+          "System-Wide Instructions: Any global settings or instructions used to guide AI behavior.",
         type: "textarea",
         placeholder: "Type your answer here.",
-        tooltip:
-          "Some reasonable considerations include: performance, transparency, reproducibility, ethical considerations, cost, ease-of-use, no choice (i.e., model or access/tooling was the only option given some other constraint)",
+        tooltip: "",
         required: false,
       },
       {
         id: "q23",
-        label:
-          "If and where the AI failed or was wrong, was manual intervention needed? Please describe.",
+        label: "Code: Any scripts or code used to call the AI.",
         type: "textarea",
         placeholder: "Type your answer here.",
         tooltip: "",

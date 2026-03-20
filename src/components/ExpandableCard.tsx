@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import "./ExpandableCard.css";
 import type { CardData } from "../data/formData";
 
@@ -10,6 +10,11 @@ type ExpandableCardProps = {
   instances?: Record<string, any>[];
   onInstancesChange?: (instances: Record<string, any>[]) => void;
   templateId?: string;
+  // Global instance management (for syncing across sections)
+  showAddButton?: boolean;
+  onAddGlobalInstance?: () => void;
+  onRemoveGlobalInstance?: (index: number) => void;
+  roleLabels?: string[]; // Labels from first card's q1 selections
 };
 
 // Character limit for summary truncation
@@ -22,36 +27,20 @@ function ExpandableCard({
   instances: externalInstances,
   onInstancesChange,
   templateId = "ai-disclosure",
+  showAddButton = true,
+  onAddGlobalInstance,
+  onRemoveGlobalInstance,
+  roleLabels,
 }: ExpandableCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [summaryExpanded, setSummaryExpanded] = useState(false);
 
   // Multi-instance state - array of instances, each with their own answers
-  const [instances, setInstances] = useState<Record<string, string>[]>(() => {
-    if (externalInstances && externalInstances.length > 0) {
-      return externalInstances;
-    }
-    // Initialize with one instance containing initialData
-    return [initialData || {}];
-  });
-
-  // Sync with external instances
-  useEffect(() => {
-    if (externalInstances && externalInstances.length > 0) {
-      setInstances(externalInstances);
-    }
-  }, [externalInstances]);
-
-  // Load initial data when provided (for backward compatibility)
-  useEffect(() => {
-    if (initialData && !externalInstances) {
-      setInstances((prev) => {
-        const newInstances = [...prev];
-        newInstances[0] = { ...newInstances[0], ...initialData };
-        return newInstances;
-      });
-    }
-  }, [initialData, externalInstances]);
+  // Always prefer external instances if provided (controlled component pattern)
+  const instances =
+    externalInstances && externalInstances.length > 0
+      ? externalInstances
+      : [initialData || {}];
 
   const isTruncated = card.summary.length > CHAR_LIMIT;
   const displaySummary =
@@ -78,9 +67,8 @@ function ExpandableCard({
       ...newInstances[instanceIndex],
       [questionId]: value,
     };
-    setInstances(newInstances);
 
-    // Notify parent of changes
+    // Notify parent of changes (controlled component)
     if (onInstancesChange) {
       onInstancesChange(newInstances);
     }
@@ -91,19 +79,25 @@ function ExpandableCard({
   };
 
   const addInstance = () => {
-    const newInstances = [...instances, {}];
-    setInstances(newInstances);
-    if (onInstancesChange) {
-      onInstancesChange(newInstances);
+    if (onAddGlobalInstance) {
+      onAddGlobalInstance();
+    } else {
+      const newInstances = [...instances, {}];
+      if (onInstancesChange) {
+        onInstancesChange(newInstances);
+      }
     }
   };
 
   const removeInstance = (index: number) => {
     if (instances.length <= 1) return;
-    const newInstances = instances.filter((_, i) => i !== index);
-    setInstances(newInstances);
-    if (onInstancesChange) {
-      onInstancesChange(newInstances);
+    if (onRemoveGlobalInstance) {
+      onRemoveGlobalInstance(index);
+    } else {
+      const newInstances = instances.filter((_, i) => i !== index);
+      if (onInstancesChange) {
+        onInstancesChange(newInstances);
+      }
     }
   };
 
@@ -118,28 +112,64 @@ function ExpandableCard({
     instance: Record<string, string>,
     instanceIndex: number,
   ) => {
-    const instanceLabel =
-      templateId === "ai-disclosure" ? "AI Tool" : "Data Source";
+    // Determine instance label: use roleLabels if provided, otherwise fall back to generic labels
+    let instanceLabel: string;
+    if (roleLabels && roleLabels[instanceIndex]) {
+      instanceLabel = `${roleLabels[instanceIndex]} Use Case`;
+    } else if (templateId === "ai-disclosure") {
+      // For first card, use the q1 value if available
+      const role = instance["q1"];
+      instanceLabel = role ? `${role} Use Case` : "AI Tool";
+    } else {
+      instanceLabel = "Data Source";
+    }
+
+    // For AI disclosure, always show the instance header with role label
+    // For other templates, only show when multiple instances exist
+    const showInstanceHeader =
+      templateId === "ai-disclosure" || instances.length > 1;
+
     return (
       <div key={instanceIndex} className="card-instance">
-        {instances.length > 1 && (
+        {showInstanceHeader && (
           <div className="instance-header">
             <span className="instance-label">
-              {instanceLabel} {instanceIndex + 1}
+              {instanceLabel} {instances.length > 1 ? instanceIndex + 1 : ""}
             </span>
-            <button
-              type="button"
-              className="remove-instance-btn"
-              onClick={() => removeInstance(instanceIndex)}
-              aria-label="Remove this instance"
-            >
-              ✕
-            </button>
+            {instances.length > 1 && (
+              <button
+                type="button"
+                className="remove-instance-btn"
+                onClick={() => removeInstance(instanceIndex)}
+                aria-label="Remove this instance"
+              >
+                ✕
+              </button>
+            )}
           </div>
         )}
         {card.questions.map((question, qIndex) => {
-          // Conditionally render question 9 only if question 8 is "Yes" (AI Disclosure form)
-          if (question.id === "q9" && instance["q8"] !== "Yes") {
+          // AI Disclosure form conditionals:
+          // q6 (Instrument/Interface) and q7 (Disclosure Possible) only show if q5 is "Embedded in third-party platform/tool"
+          if (
+            (question.id === "q6" || question.id === "q7") &&
+            instance["q5"] !== "Embedded in third-party platform/tool"
+          ) {
+            return null;
+          }
+          // q13 (AI as Interviewer) only shows if the role for this instance is "Interviewer"
+          if (question.id === "q13") {
+            // For tasks-performed card, check instance["q1"] directly
+            // For other cards, check roleLabels
+            const role = roleLabels
+              ? roleLabels[instanceIndex]
+              : instance["q1"];
+            if (role !== "Interviewer") {
+              return null;
+            }
+          }
+          // q18 (Fine-Tuning Details) only shows if q17 is "Yes"
+          if (question.id === "q18" && instance["q17"] !== "Yes") {
             return null;
           }
 
@@ -157,14 +187,36 @@ function ExpandableCard({
             return null;
           }
 
-          // Display conditional questions with letter suffix (e.g., "4a")
-          let questionNumber: string | number;
-          if (question.id === "q9") {
-            questionNumber = "4a";
-          } else if (["q10", "q11", "q12"].includes(question.id)) {
-            questionNumber = qIndex;
+          // Custom numbering for access-infrastructure section
+          let questionNumber: string;
+          if (card.id === "access-infrastructure") {
+            // q5 = 1, q6 = 1a, q7 = 1b, q8 = 2, q9 = 3, etc.
+            if (question.id === "q5") {
+              questionNumber = "1";
+            } else if (question.id === "q6") {
+              questionNumber = "1a";
+            } else if (question.id === "q7") {
+              questionNumber = "1b";
+            } else {
+              // q8 -> 2, q9 -> 3, q10 -> 4, etc.
+              const qNum = parseInt(question.id.replace("q", ""), 10);
+              questionNumber = String(qNum - 6); // q8=2, q9=3, q10=4...
+            }
+          } else if (card.id === "model-details") {
+            // q17 = Fine-Tuning Status, q18 = Fine-Tuning Details (conditional)
+            if (question.id === "q17") {
+              questionNumber = "4";
+            } else if (question.id === "q18") {
+              questionNumber = "4a";
+            } else if (question.id === "q19" || question.id === "q20") {
+              // q19 = 5, q20 = 6
+              const qNum = parseInt(question.id.replace("q", ""), 10);
+              questionNumber = String(qNum - 14); // q19=5, q20=6
+            } else {
+              questionNumber = String(qIndex + 1);
+            }
           } else {
-            questionNumber = qIndex + 1;
+            questionNumber = String(qIndex + 1);
           }
 
           return (
@@ -183,20 +235,74 @@ function ExpandableCard({
               </div>
               {question.type === "radio" && question.options ? (
                 <div className="button-group">
-                  {question.options.map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      className={`option-button ${
-                        instance[question.id] === option ? "selected" : ""
-                      }`}
-                      onClick={() =>
-                        handleValueChange(instanceIndex, question.id, option)
-                      }
-                    >
-                      {option}
-                    </button>
-                  ))}
+                  {question.options.map((option) => {
+                    const optionTooltip = question.optionTooltips?.[option];
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        className={`option-button ${
+                          instance[question.id] === option ? "selected" : ""
+                        }`}
+                        onClick={() =>
+                          handleValueChange(instanceIndex, question.id, option)
+                        }
+                      >
+                        {option}
+                        {optionTooltip && (
+                          <span className="option-tooltip-container">
+                            <span className="option-tooltip-icon">?</span>
+                            <span className="option-tooltip-text">
+                              {optionTooltip}
+                            </span>
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : question.type === "checkbox" && question.options ? (
+                <div className="checkbox-group">
+                  {question.options.map((option) => {
+                    const currentValues = instance[question.id]
+                      ? instance[question.id].split(", ")
+                      : [];
+                    const isChecked = currentValues.includes(option);
+                    const optionTooltip = question.optionTooltips?.[option];
+
+                    return (
+                      <label key={option} className="checkbox-option">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {
+                            let newValues: string[];
+                            if (isChecked) {
+                              newValues = currentValues.filter(
+                                (v) => v !== option,
+                              );
+                            } else {
+                              newValues = [...currentValues, option];
+                            }
+                            handleValueChange(
+                              instanceIndex,
+                              question.id,
+                              newValues.join(", "),
+                            );
+                          }}
+                        />
+                        <span className="checkbox-label">{option}</span>
+                        {optionTooltip && (
+                          <span className="option-tooltip-container">
+                            <span className="option-tooltip-icon">?</span>
+                            <span className="option-tooltip-text">
+                              {optionTooltip}
+                            </span>
+                          </span>
+                        )}
+                      </label>
+                    );
+                  })}
                 </div>
               ) : question.type === "textarea" ? (
                 <textarea
@@ -276,15 +382,17 @@ function ExpandableCard({
 
           {instances.map((instance, index) => renderInstance(instance, index))}
 
-          <button
-            type="button"
-            className="add-instance-btn"
-            onClick={addInstance}
-          >
-            {templateId === "ai-disclosure"
-              ? "+ Add Another AI Tool or Use Case"
-              : "+ Add Another Data Source"}
-          </button>
+          {showAddButton && (
+            <button
+              type="button"
+              className="add-instance-btn"
+              onClick={addInstance}
+            >
+              {templateId === "ai-disclosure"
+                ? "+ Add Another AI Tool or Use Case"
+                : "+ Add Another Data Source"}
+            </button>
+          )}
         </div>
       )}
     </div>

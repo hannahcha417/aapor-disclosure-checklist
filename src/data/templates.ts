@@ -41,12 +41,7 @@ export const aiDisclosureTemplate: FormTemplate = {
       title: "Core/Enhanced Questions",
       description:
         "Core questions should be answered in all reporting scenarios ensuring consistent transparency across studies: this is the minimum viable disclosure to ensure that consumers of the polling data can understand potential bias and limitations. Enhanced questions are always valuable to answer, as they provide deeper insight into methods and AI involvement, but they are not mandatory in every situation: this is necessary for any situation that requires reproducibility.",
-      sectionIds: [
-        "model-details",
-        "access-tooling-details",
-        "core-prompts",
-        "additional-enhanced-disclosures",
-      ],
+      sectionIds: ["access-infrastructure", "model-details", "core-prompts"],
     },
   ],
 };
