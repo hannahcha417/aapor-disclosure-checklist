@@ -31,8 +31,6 @@ export const cardSections: CardData[] = [
           "Interviewer",
           "Respondent",
           "Analyst",
-          "Colleague",
-          "Briefer",
           "Other",
         ],
         optionTooltips: {
@@ -41,9 +39,6 @@ export const cardSections: CardData[] = [
           Respondent:
             "AI simulating the target population or providing synthetic responses",
           Analyst: "AI cleaning, labeling, or modeling the raw data",
-          Colleague:
-            "AI helping to write the survey instrument or research design",
-          Briefer: "AI helping to create the report or other deliverable",
         },
         tooltip: "",
         required: true,
