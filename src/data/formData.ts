@@ -30,10 +30,9 @@ export const cardSections: CardData[] = [
         options: ["Interviewer", "Respondent", "Analyst", "Other"],
         optionTooltips: {
           Interviewer:
-            "AI asking questions or adding follow-up questions in response to answers",
-          Respondent:
-            "AI simulating the target population or providing synthetic responses",
-          Analyst: "AI cleaning, labeling, or modeling the raw data",
+            "Asking questions (e.g., a voice-enabled AI chatbot administered the survey, adapting follow-up questions based on prior responses).",
+          Respondent: "Simulating the target population.",
+          Analyst: "Cleaning, labeling, or modeling the raw data",
         },
         tooltip: "",
         required: true,
@@ -281,7 +280,7 @@ export const cardSections: CardData[] = [
     questions: [
       {
         id: "q24",
-        label: "Report the total number of humans who performed the task",
+        label: "Report the total number of humans who responded to the survey.",
         type: "textarea",
         placeholder: "Type your answer here.",
         tooltip:
@@ -291,7 +290,7 @@ export const cardSections: CardData[] = [
       {
         id: "q25",
         label:
-          "If human data was augmented in any way using synthetic data, describe how the synthetic data was created and used, and if or how the biases in the data were controlled for. Disclose if synthetic respondents are used in figures/tables/standard errors.",
+          "If human data was augmented in any way using synthetic data, describe how the synthetic data was created and used. Generated responses or data that are generated, inferred or modeled through artificial intelligence (e.g., silicon samples, digital twins, synthetic samples) are not research “participants.”  Cases created in this manner and included in a purported study of public opinion must be identified as having been created through artificial intelligence.",
         type: "textarea",
         placeholder: "Type your answer here.",
         tooltip:
