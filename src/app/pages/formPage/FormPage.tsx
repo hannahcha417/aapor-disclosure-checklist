@@ -598,6 +598,15 @@ function FormPage({
         {/* For AI Disclosure: render by USE CASE, each containing all sections */}
         {templateId === "ai-disclosure" && template && (
           <>
+            <button
+              type="button"
+              className="add-use-case-btn add-use-case-btn-floating"
+              onClick={handleAddGlobalInstance}
+              aria-label="Add Another Use Case"
+            >
+              + Add Use Case
+            </button>
+
             {(instancesData["tasks-performed"] || [{}]).map(
               (_, useCaseIndex) => {
                 const roleLabel =
@@ -720,16 +729,6 @@ function FormPage({
                 );
               },
             )}
-
-            <div className="add-use-case-container">
-              <button
-                type="button"
-                className="add-use-case-btn"
-                onClick={handleAddGlobalInstance}
-              >
-                + Add Another Use Case
-              </button>
-            </div>
           </>
         )}
 
