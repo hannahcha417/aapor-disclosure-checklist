@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./ExpandableCard.css";
 import type { CardData } from "../data/formData";
 
@@ -15,6 +15,7 @@ type ExpandableCardProps = {
   onAddGlobalInstance?: () => void;
   onRemoveGlobalInstance?: (index: number) => void;
   roleLabels?: string[]; // Labels from first card's q1 selections
+  anchorPrefix?: string;
 };
 
 // Character limit for summary truncation
@@ -31,9 +32,22 @@ function ExpandableCard({
   onAddGlobalInstance,
   onRemoveGlobalInstance,
   roleLabels,
+  anchorPrefix,
 }: ExpandableCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [summaryExpanded, setSummaryExpanded] = useState(false);
+
+  useEffect(() => {
+    if (!anchorPrefix) return;
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { anchorPrefix?: string };
+      if (detail?.anchorPrefix === anchorPrefix) {
+        setExpanded(true);
+      }
+    };
+    window.addEventListener("expand-card", handler);
+    return () => window.removeEventListener("expand-card", handler);
+  }, [anchorPrefix]);
 
   // Multi-instance state - array of instances, each with their own answers
   // Always prefer external instances if provided (controlled component pattern)
@@ -47,15 +61,6 @@ function ExpandableCard({
     summaryExpanded || !isTruncated
       ? card.summary
       : card.summary.slice(0, CHAR_LIMIT) + "...";
-
-  // Check if any required question is incomplete across all instances
-  const hasIncompleteQuestions = instances.some((instance) =>
-    card.questions.some((question) => {
-      if (!question.required) return false;
-      const value = instance[question.id];
-      return !value || value.trim() === "";
-    }),
-  );
 
   const handleValueChange = (
     instanceIndex: number,
@@ -224,7 +229,10 @@ function ExpandableCard({
           }
 
           return (
-            <label key={question.id}>
+            <label
+              key={question.id}
+              id={`${anchorPrefix || card.id}-i${instanceIndex}-${question.id}`}
+            >
               <div style={{ marginBottom: "0.5rem" }}>
                 <span className="question-label">
                   {questionNumber}. {question.label}
@@ -346,18 +354,10 @@ function ExpandableCard({
   };
 
   return (
-    <div className="card">
+    <div className="card" id={anchorPrefix ? `card-${anchorPrefix}` : undefined}>
       <div className="card-header">
         <div className="card-title-container">
           <h1>{card.title}</h1>
-          {hasIncompleteQuestions && (
-            <span className="incomplete-indicator-container">
-              <span className="incomplete-indicator">!</span>
-              <span className="incomplete-tooltip">
-                Some questions in this section are incomplete!
-              </span>
-            </span>
-          )}
         </div>
         <button
           className="arrow-btn"

@@ -104,6 +104,10 @@ function FormPage({
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [showAuthorModal, setShowAuthorModal] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(!initialFormId);
+  const [showIncompleteModal, setShowIncompleteModal] = useState(false);
+  const [incompleteItems, setIncompleteItems] = useState<
+    { group: string; question: string; anchor: string; questionId: string }[]
+  >([]);
   const [authorName, setAuthorName] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -303,7 +307,119 @@ function FormPage({
     });
   };
 
-  const handleExport = async () => {
+  // Compute the list of required questions that have not been answered,
+  // honoring the conditional visibility rules used for rendering the form.
+  const getIncompleteRequired = (): {
+    group: string;
+    question: string;
+    anchor: string;
+    questionId: string;
+  }[] => {
+    if (!template) return [];
+
+    const items: {
+      group: string;
+      question: string;
+      anchor: string;
+      questionId: string;
+    }[] = [];
+
+    const isAnswered = (val: any) => {
+      if (val === undefined || val === null) return false;
+      if (typeof val === "string") return val.trim() !== "";
+      if (Array.isArray(val)) return val.length > 0;
+      return true;
+    };
+
+    if (templateId === "ai-disclosure") {
+      const useCases = instancesData["tasks-performed"] || [{}];
+      useCases.forEach((_, useCaseIndex) => {
+        const roleLabel =
+          instancesData["tasks-performed"]?.[useCaseIndex]?.["q1"] ||
+          "AI Tool";
+        const useCaseTitle =
+          `${roleLabel} Use Case ${useCases.length > 1 ? useCaseIndex + 1 : ""}`.trim();
+
+        template.sectionGroups.forEach((group) => {
+          group.sectionIds.forEach((sectionId) => {
+            const card = getCardById(sectionId);
+            if (!card) return;
+
+            // Same conditional skip as the renderer for 4a / 4b
+            if (
+              sectionId === "model-details" ||
+              sectionId === "core-prompts"
+            ) {
+              const accessMethod =
+                instancesData["access-infrastructure"]?.[useCaseIndex]?.[
+                  "q5"
+                ] || "";
+              const disclosurePossible =
+                instancesData["access-infrastructure"]?.[useCaseIndex]?.[
+                  "q7"
+                ] || "";
+              const isDirect = accessMethod.includes("Direct");
+              const isFirstParty = accessMethod.includes("First-party");
+              const isThirdPartyWithDisclosure =
+                accessMethod.includes("third-party") &&
+                disclosurePossible === "Yes";
+              if (
+                !isDirect &&
+                !isFirstParty &&
+                !isThirdPartyWithDisclosure
+              ) {
+                return;
+              }
+            }
+
+            const anchorPrefix = `uc${useCaseIndex}-${sectionId}`;
+            const instance =
+              instancesData[sectionId]?.[useCaseIndex] || {};
+            card.questions.forEach((q) => {
+              if (!q.required) return;
+              if (!isAnswered(instance[q.id])) {
+                items.push({
+                  group: `${useCaseTitle} — ${card.title}`,
+                  question: q.label,
+                  anchor: `${anchorPrefix}-i0-${q.id}`,
+                  questionId: anchorPrefix,
+                });
+              }
+            });
+          });
+        });
+      });
+    } else {
+      template.sectionGroups.forEach((group) => {
+        group.sectionIds.forEach((sectionId) => {
+          const card = getCardById(sectionId);
+          if (!card) return;
+          const instances = instancesData[sectionId] || [{}];
+          instances.forEach((instance, idx) => {
+            const groupLabel =
+              instances.length > 1
+                ? `${card.title} (Entry ${idx + 1})`
+                : card.title;
+            card.questions.forEach((q) => {
+              if (!q.required) return;
+              if (!isAnswered(instance[q.id])) {
+                items.push({
+                  group: groupLabel,
+                  question: q.label,
+                  anchor: `${sectionId}-i${idx}-${q.id}`,
+                  questionId: sectionId,
+                });
+              }
+            });
+          });
+        });
+      });
+    }
+
+    return items;
+  };
+
+  const runExport = async () => {
     try {
       const suffix = exportFormat === "summary" ? "_summary" : "";
       const baseFileName = formTitle.replace(/\s+/g, "_");
@@ -371,6 +487,16 @@ function FormPage({
     } catch (error) {
       console.error("Error generating export:", error);
     }
+  };
+
+  const handleExport = async () => {
+    const missing = getIncompleteRequired();
+    if (missing.length > 0) {
+      setIncompleteItems(missing);
+      setShowIncompleteModal(true);
+      return;
+    }
+    await runExport();
   };
 
   return (
@@ -472,6 +598,68 @@ function FormPage({
                 onClick={() => setShowWelcomeModal(false)}
               >
                 Get Started
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showIncompleteModal && (
+        <div className="modal-overlay">
+          <div className="modal-content incomplete-modal">
+            <h2>Required questions are unanswered</h2>
+            <p>
+              The following required questions haven't been answered yet.
+              Click any item to jump to it, or export the form as-is.
+            </p>
+            <ul className="incomplete-list">
+              {incompleteItems.map((item, idx) => (
+                <li key={idx}>
+                  <button
+                    type="button"
+                    className="incomplete-link"
+                    onClick={() => {
+                      setShowIncompleteModal(false);
+                      window.dispatchEvent(
+                        new CustomEvent("expand-card", {
+                          detail: { anchorPrefix: item.questionId },
+                        }),
+                      );
+                      setTimeout(() => {
+                        const el = document.getElementById(item.anchor);
+                        if (el) {
+                          el.scrollIntoView({
+                            behavior: "smooth",
+                            block: "center",
+                          });
+                          el.classList.add("highlight-question");
+                          setTimeout(() => {
+                            el.classList.remove("highlight-question");
+                          }, 2000);
+                        }
+                      }, 100);
+                    }}
+                  >
+                    <strong>{item.group}:</strong> {item.question}
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="modal-buttons">
+              <button
+                className="modal-btn cancel"
+                onClick={() => setShowIncompleteModal(false)}
+              >
+                Go Back
+              </button>
+              <button
+                className="modal-btn confirm"
+                onClick={async () => {
+                  setShowIncompleteModal(false);
+                  await runExport();
+                }}
+              >
+                Export Anyway
               </button>
             </div>
           </div>
@@ -657,14 +845,20 @@ function FormPage({
         {/* For AI Disclosure: render by USE CASE, each containing all sections */}
         {templateId === "ai-disclosure" && template && (
           <>
-            <button
-              type="button"
-              className="add-use-case-btn add-use-case-btn-floating"
-              onClick={handleAddGlobalInstance}
-              aria-label="Add Another Use Case"
-            >
-              + Add Use Case
-            </button>
+            {!showWelcomeModal &&
+              !showIncompleteModal &&
+              !showPublishModal &&
+              !showAuthorModal &&
+              !showGuestExitWarning && (
+                <button
+                  type="button"
+                  className="add-use-case-btn add-use-case-btn-floating"
+                  onClick={handleAddGlobalInstance}
+                  aria-label="Add Another Use Case"
+                >
+                  + Add Use Case
+                </button>
+              )}
 
             {(instancesData["tasks-performed"] || [{}]).map(
               (_, useCaseIndex) => {
@@ -771,6 +965,7 @@ function FormPage({
                                 });
                               }}
                               showAddButton={false}
+                              anchorPrefix={`uc${useCaseIndex}-${sectionId}`}
                               // Pass role for conditional question logic (q13 interviewer check)
                               // Don't pass roleLabels for model-details (4a) or core-prompts (4b) to hide use case wrapper
                               roleLabels={
@@ -815,6 +1010,7 @@ function FormPage({
                       handleInstancesChange(sectionId, instances)
                     }
                     showAddButton={true}
+                    anchorPrefix={sectionId}
                   />
                 );
               })}

@@ -340,6 +340,65 @@ section p {
   color: #666 !important;
 }
 
+.modal-content.incomplete-modal {
+  max-width: 600px;
+  text-align: left;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.incomplete-list {
+  margin: 1rem 0;
+  padding-left: 1.25rem;
+  color: #555;
+  line-height: 1.5;
+}
+
+.incomplete-list li {
+  margin-bottom: 0.5rem;
+}
+
+.incomplete-link {
+  background: none;
+  border: none;
+  padding: 0.25rem 0;
+  text-align: left;
+  color: #667eea;
+  cursor: pointer;
+  font: inherit;
+  line-height: 1.4;
+  width: 100%;
+}
+
+.incomplete-link:hover {
+  text-decoration: underline;
+  color: #5a6fd6;
+}
+
+.incomplete-link strong {
+  color: #333;
+}
+
+.highlight-question {
+  animation: highlight-pulse 2s ease-out;
+  border-radius: 6px;
+}
+
+@keyframes highlight-pulse {
+  0% {
+    background-color: rgba(102, 126, 234, 0.25);
+    box-shadow: 0 0 0 6px rgba(102, 126, 234, 0.25);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
+.modal-content.incomplete-modal .modal-buttons {
+  justify-content: flex-end;
+}
+
 .modal-content h2 {
   margin: 0 0 1rem 0;
   color: #333;
