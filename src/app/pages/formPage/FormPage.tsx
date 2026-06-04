@@ -103,6 +103,7 @@ function FormPage({
   const [isPublishing, setIsPublishing] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [showAuthorModal, setShowAuthorModal] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(!initialFormId);
   const [authorName, setAuthorName] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -413,6 +414,64 @@ function FormPage({
                 }}
               >
                 Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showWelcomeModal && (
+        <div className="modal-overlay">
+          <div className="modal-content welcome-modal">
+            <h2>AAPOR's Disclosure Checklist for the Use of AI in Surveys</h2>
+            <p>
+              This form is intended to make it easy and straightforward to fill
+              out AAPOR's Disclosure Checklist for the Use of AI in Surveys
+              through an online form. It also allows you to easily export your
+              answers to integrate in your paper, or make your completed form
+              publicly available for greater transparency.
+            </p>
+            <p>
+              This checklist is organized into two categories. Immediate
+              disclosures must be included in any reporting or methodological
+              summaries. Core/enhanced questions should be answered in all
+              reporting scenarios ensuring consistent transparency across
+              studies and are always valuable to answer, as they provide
+              deeper insight into methods and AI involvement. Nothing in this
+              checklist is meant to override additional journal, IRB,
+              CCPA/GDPR requirements for compliance and reporting.
+            </p>
+            <h3>How to fill out this form:</h3>
+            <p>
+              This form is estimated to take ~10-15 minutes. Each major
+              section in the form can be expanded to show the required
+              questions to fill. Save your form using the button on the top
+              right, which saves your progress so you can return to it at any
+              time in your account. If you do not have an account, your
+              answers will not be saved unless you export your form to save
+              locally. Each set of questions is intended to be answered about
+              one use case for an AI system (e.g. to interview participants)
+              within your study. You can add different use cases for an AI
+              system by using the button on the bottom right.
+            </p>
+            <p>
+              You can export your answers to this question using the "Export"
+              option at the bottom of the page. There are a few export
+              options, such as exporting as a question list or in paragraph
+              prose. You can also make your form publicly available by
+              publishing a link, which would allow anyone to see your form
+              responses.
+            </p>
+            <p className="welcome-modal-footer">
+              You can revisit this information at any time from the sidebar on
+              the right side of the page.
+            </p>
+            <div className="modal-buttons">
+              <button
+                className="modal-btn confirm"
+                onClick={() => setShowWelcomeModal(false)}
+              >
+                Get Started
               </button>
             </div>
           </div>

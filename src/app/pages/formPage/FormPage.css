@@ -315,6 +315,31 @@ section p {
   text-align: center;
 }
 
+.modal-content.welcome-modal {
+  max-width: 720px;
+  text-align: left;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modal-content.welcome-modal h3 {
+  margin: 1.25rem 0 0.5rem 0;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.modal-content.welcome-modal .modal-buttons {
+  justify-content: flex-end;
+}
+
+.welcome-modal-footer {
+  margin-top: 1.5rem !important;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+  font-style: italic;
+  color: #666 !important;
+}
+
 .modal-content h2 {
   margin: 0 0 1rem 0;
   color: #333;
