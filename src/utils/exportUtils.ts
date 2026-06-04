@@ -1,5 +1,5 @@
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from "docx";
-import { getTemplateById, DEFAULT_TEMPLATE_ID } from "../data/templates";
+import { getTemplateById, DEFAULT_TEMPLATE_ID, isAIDisclosureTemplate } from "../data/templates";
 import type { CardData } from "../data/formData";
 
 // Helper function to check if a question should be shown based on conditional logic
@@ -29,7 +29,7 @@ function shouldShowQuestion(
     return false;
   }
   // AAPOR Required Disclosure form conditional questions (only for non-AI-disclosure templates)
-  if (templateId !== "ai-disclosure") {
+  if (!isAIDisclosureTemplate(templateId)) {
     // Panel Information: q21 only shows if q20 is "Yes"
     if (questionId === "q21" && instance["q20"] !== "Yes") {
       return false;
@@ -90,16 +90,16 @@ function generateDetailedContent(
 
   // Get role labels from first card for AI disclosure template
   const getRoleLabel = (instanceIndex: number): string => {
-    if (templateId === "ai-disclosure") {
+    if (isAIDisclosureTemplate(templateId)) {
       const firstCardInstances = instancesData["tasks-performed"] || [];
       const role = firstCardInstances[instanceIndex]?.["q1"];
       if (role) return `${role} Use Case`;
     }
-    return templateId === "ai-disclosure" ? "AI Tool" : "Data Source";
+    return isAIDisclosureTemplate(templateId) ? "AI Tool" : "Data Source";
   };
   // Get raw role value for conditional logic
   const getRole = (instanceIndex: number): string | undefined => {
-    if (templateId === "ai-disclosure") {
+    if (isAIDisclosureTemplate(templateId)) {
       const firstCardInstances = instancesData["tasks-performed"] || [];
       return firstCardInstances[instanceIndex]?.["q1"];
     }
@@ -182,7 +182,7 @@ function generateDetailedContent(
   };
 
   // For AI Disclosure: render USE CASE by USE CASE
-  if (templateId === "ai-disclosure") {
+  if (isAIDisclosureTemplate(templateId)) {
     const numUseCases = (instancesData["tasks-performed"] || [{}]).length;
 
     for (let useCaseIndex = 0; useCaseIndex < numUseCases; useCaseIndex++) {
@@ -358,16 +358,16 @@ function generateSummaryContent(
 
   // Get role labels from first card for AI disclosure template
   const getRoleLabel = (instanceIndex: number): string => {
-    if (templateId === "ai-disclosure") {
+    if (isAIDisclosureTemplate(templateId)) {
       const firstCardInstances = instancesData["tasks-performed"] || [];
       const role = firstCardInstances[instanceIndex]?.["q1"];
       if (role) return `${role} Use Case`;
     }
-    return templateId === "ai-disclosure" ? "AI Tool" : "Data Source";
+    return isAIDisclosureTemplate(templateId) ? "AI Tool" : "Data Source";
   };
   // Get raw role value for conditional logic
   const getRole = (instanceIndex: number): string | undefined => {
-    if (templateId === "ai-disclosure") {
+    if (isAIDisclosureTemplate(templateId)) {
       const firstCardInstances = instancesData["tasks-performed"] || [];
       return firstCardInstances[instanceIndex]?.["q1"];
     }
@@ -438,7 +438,7 @@ function generateSummaryContent(
   };
 
   // For AI Disclosure: render USE CASE by USE CASE
-  if (templateId === "ai-disclosure") {
+  if (isAIDisclosureTemplate(templateId)) {
     const numUseCases = (instancesData["tasks-performed"] || [{}]).length;
 
     for (let useCaseIndex = 0; useCaseIndex < numUseCases; useCaseIndex++) {
@@ -632,16 +632,16 @@ function generateDetailedText(
 
   // Get role labels from first card for AI disclosure template
   const getRoleLabel = (instanceIndex: number): string => {
-    if (templateId === "ai-disclosure") {
+    if (isAIDisclosureTemplate(templateId)) {
       const firstCardInstances = instancesData["tasks-performed"] || [];
       const role = firstCardInstances[instanceIndex]?.["q1"];
       if (role) return `${role} Use Case`;
     }
-    return templateId === "ai-disclosure" ? "AI Tool" : "Data Source";
+    return isAIDisclosureTemplate(templateId) ? "AI Tool" : "Data Source";
   };
   // Get raw role value for conditional logic
   const getRole = (instanceIndex: number): string | undefined => {
-    if (templateId === "ai-disclosure") {
+    if (isAIDisclosureTemplate(templateId)) {
       const firstCardInstances = instancesData["tasks-performed"] || [];
       return firstCardInstances[instanceIndex]?.["q1"];
     }
@@ -678,7 +678,7 @@ function generateDetailedText(
   };
 
   // For AI Disclosure: render USE CASE by USE CASE
-  if (templateId === "ai-disclosure") {
+  if (isAIDisclosureTemplate(templateId)) {
     const numUseCases = (instancesData["tasks-performed"] || [{}]).length;
 
     for (let useCaseIndex = 0; useCaseIndex < numUseCases; useCaseIndex++) {
@@ -784,16 +784,16 @@ function generateSummaryText(
 
   // Get role labels from first card for AI disclosure template
   const getRoleLabel = (instanceIndex: number): string => {
-    if (templateId === "ai-disclosure") {
+    if (isAIDisclosureTemplate(templateId)) {
       const firstCardInstances = instancesData["tasks-performed"] || [];
       const role = firstCardInstances[instanceIndex]?.["q1"];
       if (role) return `${role} Use Case`;
     }
-    return templateId === "ai-disclosure" ? "AI Tool" : "Data Source";
+    return isAIDisclosureTemplate(templateId) ? "AI Tool" : "Data Source";
   };
   // Get raw role value for conditional logic
   const getRole = (instanceIndex: number): string | undefined => {
-    if (templateId === "ai-disclosure") {
+    if (isAIDisclosureTemplate(templateId)) {
       const firstCardInstances = instancesData["tasks-performed"] || [];
       return firstCardInstances[instanceIndex]?.["q1"];
     }
@@ -830,7 +830,7 @@ function generateSummaryText(
   };
 
   // For AI Disclosure: render USE CASE by USE CASE
-  if (templateId === "ai-disclosure") {
+  if (isAIDisclosureTemplate(templateId)) {
     const numUseCases = (instancesData["tasks-performed"] || [{}]).length;
 
     for (let useCaseIndex = 0; useCaseIndex < numUseCases; useCaseIndex++) {
@@ -979,16 +979,16 @@ function generateDetailedLatex(
 
   // Get role labels from first card for AI disclosure template
   const getRoleLabel = (instanceIndex: number): string => {
-    if (templateId === "ai-disclosure") {
+    if (isAIDisclosureTemplate(templateId)) {
       const firstCardInstances = instancesData["tasks-performed"] || [];
       const role = firstCardInstances[instanceIndex]?.["q1"];
       if (role) return `${role} Use Case`;
     }
-    return templateId === "ai-disclosure" ? "AI Tool" : "Data Source";
+    return isAIDisclosureTemplate(templateId) ? "AI Tool" : "Data Source";
   };
   // Get raw role value for conditional logic
   const getRole = (instanceIndex: number): string | undefined => {
-    if (templateId === "ai-disclosure") {
+    if (isAIDisclosureTemplate(templateId)) {
       const firstCardInstances = instancesData["tasks-performed"] || [];
       return firstCardInstances[instanceIndex]?.["q1"];
     }
@@ -1043,7 +1043,7 @@ function generateDetailedLatex(
   };
 
   // For AI Disclosure: render USE CASE by USE CASE
-  if (templateId === "ai-disclosure") {
+  if (isAIDisclosureTemplate(templateId)) {
     const numUseCases = (instancesData["tasks-performed"] || [{}]).length;
 
     for (let useCaseIndex = 0; useCaseIndex < numUseCases; useCaseIndex++) {
@@ -1150,16 +1150,16 @@ function generateSummaryLatex(
 
   // Get role labels from first card for AI disclosure template
   const getRoleLabel = (instanceIndex: number): string => {
-    if (templateId === "ai-disclosure") {
+    if (isAIDisclosureTemplate(templateId)) {
       const firstCardInstances = instancesData["tasks-performed"] || [];
       const role = firstCardInstances[instanceIndex]?.["q1"];
       if (role) return `${role} Use Case`;
     }
-    return templateId === "ai-disclosure" ? "AI Tool" : "Data Source";
+    return isAIDisclosureTemplate(templateId) ? "AI Tool" : "Data Source";
   };
   // Get raw role value for conditional logic
   const getRole = (instanceIndex: number): string | undefined => {
-    if (templateId === "ai-disclosure") {
+    if (isAIDisclosureTemplate(templateId)) {
       const firstCardInstances = instancesData["tasks-performed"] || [];
       return firstCardInstances[instanceIndex]?.["q1"];
     }
@@ -1209,7 +1209,7 @@ function generateSummaryLatex(
   };
 
   // For AI Disclosure: render USE CASE by USE CASE
-  if (templateId === "ai-disclosure") {
+  if (isAIDisclosureTemplate(templateId)) {
     const numUseCases = (instancesData["tasks-performed"] || [{}]).length;
 
     for (let useCaseIndex = 0; useCaseIndex < numUseCases; useCaseIndex++) {

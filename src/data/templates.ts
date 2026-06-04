@@ -18,6 +18,9 @@ export interface FormTemplate {
     description: string;
     sectionIds: string[];
   }[];
+  // Optional: extra AAPOR sections to render in section-by-section
+  // style after the AI use-case sections (used by the "full" level).
+  extraAaporSectionIds?: string[];
 }
 
 // AI Disclosure Checklist Template (current form)
@@ -80,10 +83,44 @@ export const aaporTemplate: FormTemplate = {
   ],
 };
 
-// All available templates
+// AI Simple — only Immediate Disclosures
+export const aiSimpleTemplate: FormTemplate = {
+  id: "ai-simple",
+  name: "Simple AI Disclosure",
+  description:
+    "Required AI disclosure questions only (AAPOR code regarding AI).",
+  sections: aiDisclosureSections,
+  sectionGroups: [aiDisclosureTemplate.sectionGroups[0]],
+};
+
+// AI Enhanced — Immediate + Core/Enhanced
+export const aiEnhancedTemplate: FormTemplate = {
+  id: "ai-enhanced",
+  name: "Enhanced AI Disclosure",
+  description:
+    "Required + enhanced AI disclosure questions designed to facilitate reproducibility.",
+  sections: aiDisclosureSections,
+  sectionGroups: aiDisclosureTemplate.sectionGroups,
+};
+
+// AI Full — Immediate + Core/Enhanced + full AAPOR disclosure
+export const aiFullTemplate: FormTemplate = {
+  id: "ai-full",
+  name: "Full AAPOR + AI Disclosure",
+  description:
+    "Full AAPOR code and AI disclosure for academic publication.",
+  sections: [...aiDisclosureSections, ...aaporSections],
+  sectionGroups: aiDisclosureTemplate.sectionGroups,
+  extraAaporSectionIds: aaporTemplate.sectionGroups[0].sectionIds,
+};
+
+// All available templates (legacy + new tiered templates)
 export const allTemplates: FormTemplate[] = [
   aiDisclosureTemplate,
   aaporTemplate,
+  aiSimpleTemplate,
+  aiEnhancedTemplate,
+  aiFullTemplate,
 ];
 
 // Get template by ID
@@ -101,5 +138,18 @@ export function getCardByIdFromTemplate(
   return template.sections.find((s) => s.id === cardId);
 }
 
+// Returns true for any AI-disclosure-style template (legacy + simple/enhanced/full).
+export function isAIDisclosureTemplate(
+  templateId: string | undefined,
+): boolean {
+  if (!templateId) return false;
+  return (
+    templateId === "ai-disclosure" ||
+    templateId === "ai-simple" ||
+    templateId === "ai-enhanced" ||
+    templateId === "ai-full"
+  );
+}
+
 // Default template
-export const DEFAULT_TEMPLATE_ID = "ai-disclosure";
+export const DEFAULT_TEMPLATE_ID = "ai-enhanced";

@@ -14,6 +14,7 @@ import ExpandableCard from "../../../components/ExpandableCard";
 import {
   getTemplateById,
   DEFAULT_TEMPLATE_ID,
+  isAIDisclosureTemplate,
   type FormTemplate,
 } from "../../../data/templates";
 import { createForm, updateForm, publishForm } from "../../../utils/forms";
@@ -86,9 +87,10 @@ function FormPage({
   // Initialize instancesData with one instance per card when template loads
   useEffect(() => {
     if (template && Object.keys(instancesData).length === 0) {
-      const allSectionIds = template.sectionGroups.flatMap(
-        (group) => group.sectionIds,
-      );
+      const allSectionIds = [
+        ...template.sectionGroups.flatMap((group) => group.sectionIds),
+        ...(template.extraAaporSectionIds || []),
+      ];
       const initialData: Record<string, Record<string, any>[]> = {};
       allSectionIds.forEach((sectionId) => {
         initialData[sectionId] = [{}];
@@ -331,7 +333,7 @@ function FormPage({
       return true;
     };
 
-    if (templateId === "ai-disclosure") {
+    if (isAIDisclosureTemplate(templateId)) {
       const useCases = instancesData["tasks-performed"] || [{}];
       useCases.forEach((_, useCaseIndex) => {
         const roleLabel =
@@ -386,6 +388,30 @@ function FormPage({
                 });
               }
             });
+          });
+        });
+      });
+
+      // Also validate any extra AAPOR sections (for the "full" template).
+      (template.extraAaporSectionIds || []).forEach((sectionId) => {
+        const card = getCardById(sectionId);
+        if (!card) return;
+        const instances = instancesData[sectionId] || [{}];
+        instances.forEach((instance, idx) => {
+          const groupLabel =
+            instances.length > 1
+              ? `${card.title} (Entry ${idx + 1})`
+              : card.title;
+          card.questions.forEach((q) => {
+            if (!q.required) return;
+            if (!isAnswered(instance[q.id])) {
+              items.push({
+                group: groupLabel,
+                question: q.label,
+                anchor: `${sectionId}-i${idx}-${q.id}`,
+                questionId: sectionId,
+              });
+            }
           });
         });
       });
@@ -787,7 +813,7 @@ function FormPage({
         <div className="instructions">
           <div className="instructions-header">
             <h3>
-              {templateId === "ai-disclosure"
+              {isAIDisclosureTemplate(templateId)
                 ? "For each question in this checklist, the researcher should indicate one of the following:"
                 : "Instructions for AAPOR Required Disclosure Elements:"}
             </h3>
@@ -801,7 +827,7 @@ function FormPage({
           </div>
           {instructionsExpanded && (
             <div className="instructions-content">
-              {templateId === "ai-disclosure" ? (
+              {isAIDisclosureTemplate(templateId) ? (
                 <ul>
                   <li>The answer to the question</li>
                   <li>Question is not applicable</li>
@@ -843,7 +869,7 @@ function FormPage({
         </div>
 
         {/* For AI Disclosure: render by USE CASE, each containing all sections */}
-        {templateId === "ai-disclosure" && template && (
+        {isAIDisclosureTemplate(templateId) && template && (
           <>
             {!showWelcomeModal &&
               !showIncompleteModal &&
@@ -987,7 +1013,7 @@ function FormPage({
         )}
 
         {/* For AAPOR template: render by SECTION (original behavior) */}
-        {templateId !== "ai-disclosure" &&
+        {!isAIDisclosureTemplate(templateId) &&
           template?.sectionGroups.map((group) => (
             <section key={group.title}>
               <h2>{group.title}</h2>
@@ -1016,6 +1042,43 @@ function FormPage({
               })}
             </section>
           ))}
+
+        {/* For "full" AI template: append AAPOR sections in section-by-section style */}
+        {isAIDisclosureTemplate(templateId) &&
+          template?.extraAaporSectionIds &&
+          template.extraAaporSectionIds.length > 0 && (
+            <section>
+              <h2>AAPOR Required Disclosure Elements</h2>
+              <p>
+                Standard AAPOR disclosure questions to support full
+                transparency for academic publication.
+              </p>
+              {template.extraAaporSectionIds.map((sectionId) => {
+                const card = getCardById(sectionId);
+                if (!card) return null;
+                return (
+                  <ExpandableCard
+                    key={sectionId}
+                    card={card}
+                    initialData={formData}
+                    instances={instancesData[sectionId]}
+                    templateId="aapor-transparency"
+                    onDataChange={(questionId, value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        [questionId]: value,
+                      }))
+                    }
+                    onInstancesChange={(instances) =>
+                      handleInstancesChange(sectionId, instances)
+                    }
+                    showAddButton={true}
+                    anchorPrefix={sectionId}
+                  />
+                );
+              })}
+            </section>
+          )}
 
         <div className="submit-container">
           <div className="export-options">

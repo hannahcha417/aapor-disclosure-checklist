@@ -1,5 +1,9 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
-import { getTemplateById, DEFAULT_TEMPLATE_ID } from "../data/templates";
+import {
+  getTemplateById,
+  DEFAULT_TEMPLATE_ID,
+  isAIDisclosureTemplate,
+} from "../data/templates";
 import type { CardData } from "../data/formData";
 
 // Helper function to check if conditional questions should be shown
@@ -24,7 +28,7 @@ function shouldShowQuestion(
   // q18 (Fine-Tuning Details) only shows if q17 is "Yes"
   if (questionId === "q18" && instance["q17"] !== "Yes") return false;
   // AAPOR form conditionals (only for non-AI-disclosure templates):
-  if (templateId !== "ai-disclosure") {
+  if (templateId && !isAIDisclosureTemplate(templateId)) {
     // q21 is conditional on q20 being "Yes"
     if (questionId === "q21" && instance["q20"] !== "Yes") return false;
     // q23 is conditional on q22 being "Yes"
@@ -127,17 +131,17 @@ export const FormPDFSummary = ({
 
   // Get role labels from first card for AI disclosure template
   const getRoleLabel = (instanceIndex: number): string => {
-    if (templateId === "ai-disclosure") {
+    if (isAIDisclosureTemplate(templateId)) {
       const firstCardInstances = instancesData["tasks-performed"] || [];
       const role = firstCardInstances[instanceIndex]?.["q1"];
       if (role) return `${role} Use Case`;
     }
-    return templateId === "ai-disclosure" ? "AI Tool" : "Data Source";
+    return isAIDisclosureTemplate(templateId) ? "AI Tool" : "Data Source";
   };
 
   // Get raw role value for conditional logic
   const getRole = (instanceIndex: number): string | undefined => {
-    if (templateId === "ai-disclosure") {
+    if (isAIDisclosureTemplate(templateId)) {
       const firstCardInstances = instancesData["tasks-performed"] || [];
       return firstCardInstances[instanceIndex]?.["q1"];
     }
@@ -188,7 +192,7 @@ export const FormPDFSummary = ({
   };
 
   // For AI Disclosure: render USE CASE by USE CASE
-  if (templateId === "ai-disclosure") {
+  if (isAIDisclosureTemplate(templateId)) {
     const numUseCases = (instancesData["tasks-performed"] || [{}]).length;
 
     return (
@@ -237,6 +241,23 @@ export const FormPDFSummary = ({
               </View>
             );
           })}
+          {template.extraAaporSectionIds &&
+            template.extraAaporSectionIds.length > 0 && (
+              <View>
+                <Text style={styles.sectionTitle}>
+                  AAPOR Required Disclosure Elements
+                </Text>
+                {template.extraAaporSectionIds.map((sectionId) => {
+                  const card = template.sections.find(
+                    (s) => s.id === sectionId,
+                  );
+                  if (!card) return null;
+                  const instance =
+                    instancesData[sectionId]?.[0] || formData;
+                  return renderCardInstanceSummary(card, instance, 0);
+                })}
+              </View>
+            )}
         </Page>
       </Document>
     );

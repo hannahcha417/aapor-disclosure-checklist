@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import "./ExpandableCard.css";
 import type { CardData } from "../data/formData";
+import { isAIDisclosureTemplate } from "../data/templates";
 
 type ExpandableCardProps = {
   card: CardData;
@@ -121,7 +122,7 @@ function ExpandableCard({
     let instanceLabel: string;
     if (roleLabels && roleLabels[instanceIndex]) {
       instanceLabel = `${roleLabels[instanceIndex]} Use Case`;
-    } else if (templateId === "ai-disclosure") {
+    } else if (isAIDisclosureTemplate(templateId)) {
       // For first card, use the q1 value if available
       const role = instance["q1"];
       instanceLabel = role ? `${role} Use Case` : "AI Tool";
@@ -133,7 +134,7 @@ function ExpandableCard({
     // since each use case is already wrapped in its own section with a header
     // For other templates, only show when multiple instances exist
     const showInstanceHeader =
-      templateId !== "ai-disclosure" && instances.length > 1;
+      !isAIDisclosureTemplate(templateId) && instances.length > 1;
 
     return (
       <div key={instanceIndex} className="card-instance">
@@ -181,7 +182,7 @@ function ExpandableCard({
 
           // Conditionally render follow-up questions for AAPOR Required Disclosure form
           // These conditionals only apply to non-AI-disclosure templates
-          if (templateId !== "ai-disclosure") {
+          if (!isAIDisclosureTemplate(templateId)) {
             // Panel Information: q21 only shows if q20 is "Yes"
             if (question.id === "q21" && instance["q20"] !== "Yes") {
               return null;
@@ -392,7 +393,7 @@ function ExpandableCard({
               className="add-instance-btn"
               onClick={addInstance}
             >
-              {templateId === "ai-disclosure"
+              {isAIDisclosureTemplate(templateId)
                 ? "+ Add Another AI Tool or Use Case"
                 : "+ Add Another Data Source"}
             </button>

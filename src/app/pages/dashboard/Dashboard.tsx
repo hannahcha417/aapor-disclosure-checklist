@@ -7,7 +7,6 @@ import {
   getPublishedForms,
   type FormData,
 } from "../../../utils/forms";
-import { allTemplates } from "../../../data/templates";
 
 type DashboardProps = {
   onCreateForm: (templateId: string) => void;
@@ -22,12 +21,33 @@ type DashboardProps = {
   onLogout: () => void;
 };
 
+const DISCLOSURE_LEVEL_OPTIONS: {
+  id: "ai-simple" | "ai-enhanced" | "ai-full";
+  label: string;
+}[] = [
+  {
+    id: "ai-simple",
+    label: "Simple AI disclosure (i.e., just AAPOR code regarding AI)",
+  },
+  {
+    id: "ai-enhanced",
+    label:
+      "Enhanced AI disclosure (e.g., for academic publication) (i.e., previous + questions designed to facilitate reproducibility)",
+  },
+  {
+    id: "ai-full",
+    label:
+      "Full AAPOR code and AI disclosure for academic publication (e.g., for POQ publication) (i.e., previous + full list of AAPOR required disclosures)",
+  },
+];
+
 function Dashboard({ onCreateForm, onOpenForm, onLogout }: DashboardProps) {
   const [activeForms, setActiveForms] = useState<FormData[]>([]);
   const [publishedForms, setPublishedForms] = useState<FormData[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [selectedLevel, setSelectedLevel] = useState<string>("");
 
   useEffect(() => {
     loadActiveForms();
@@ -60,6 +80,7 @@ function Dashboard({ onCreateForm, onOpenForm, onLogout }: DashboardProps) {
 
   const handleSelectTemplate = (templateId: string) => {
     setShowTemplateModal(false);
+    setSelectedLevel("");
     onCreateForm(templateId);
   };
 
@@ -126,11 +147,14 @@ function Dashboard({ onCreateForm, onOpenForm, onLogout }: DashboardProps) {
             Create New Form
           </button>
 
-          {/* Template Selection Modal */}
+          {/* Disclosure Purpose Questionnaire */}
           {showTemplateModal && (
             <div
               className="modal-overlay"
-              onClick={() => setShowTemplateModal(false)}
+              onClick={() => {
+                setShowTemplateModal(false);
+                setSelectedLevel("");
+              }}
             >
               <div
                 className="modal-content template-modal"
@@ -138,28 +162,58 @@ function Dashboard({ onCreateForm, onOpenForm, onLogout }: DashboardProps) {
               >
                 <button
                   className="modal-close"
-                  onClick={() => setShowTemplateModal(false)}
+                  onClick={() => {
+                    setShowTemplateModal(false);
+                    setSelectedLevel("");
+                  }}
                 >
                   <FiX />
                 </button>
-                <h2>Choose a Template</h2>
+                <h2>Start a New Disclosure</h2>
                 <p className="modal-description">
-                  Select a form template to get started
+                  What disclosure/research purpose are you filling out this
+                  form for?
                 </p>
-                <div className="template-grid">
-                  {allTemplates.map((template) => (
-                    <div
-                      key={template.id}
-                      className="template-card"
-                      onClick={() => handleSelectTemplate(template.id)}
+                <div className="disclosure-level-list">
+                  {DISCLOSURE_LEVEL_OPTIONS.map((opt) => (
+                    <label
+                      key={opt.id}
+                      className={`disclosure-level-option ${
+                        selectedLevel === opt.id ? "selected" : ""
+                      }`}
                     >
-                      <div className="template-card-icon">
-                        <FiFileText />
+                      <input
+                        type="radio"
+                        name="disclosure-level"
+                        value={opt.id}
+                        checked={selectedLevel === opt.id}
+                        onChange={() => setSelectedLevel(opt.id)}
+                      />
+                      <div className="disclosure-level-text">
+                        <span className="disclosure-level-label">
+                          {opt.label}
+                        </span>
                       </div>
-                      <h4>{template.name}</h4>
-                      <p>{template.description}</p>
-                    </div>
+                    </label>
                   ))}
+                </div>
+                <div className="modal-buttons">
+                  <button
+                    className="modal-btn cancel"
+                    onClick={() => {
+                      setShowTemplateModal(false);
+                      setSelectedLevel("");
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="modal-btn confirm"
+                    disabled={!selectedLevel}
+                    onClick={() => handleSelectTemplate(selectedLevel)}
+                  >
+                    Continue
+                  </button>
                 </div>
               </div>
             </div>

@@ -4,6 +4,7 @@ import { getPublicFormByPublicId } from "../../../utils/forms";
 import {
   getTemplateById,
   DEFAULT_TEMPLATE_ID,
+  isAIDisclosureTemplate,
   type CardData,
 } from "../../../data/templates";
 import "./PublicFormView.css";
@@ -30,7 +31,7 @@ function shouldShowQuestion(
   // q18 (Fine-Tuning Details) only shows if q17 is "Yes"
   if (questionId === "q18" && instance["q17"] !== "Yes") return false;
   // AAPOR form conditionals (only for non-AI-disclosure templates):
-  if (templateId !== "ai-disclosure") {
+  if (templateId && !isAIDisclosureTemplate(templateId)) {
     // q21 is conditional on q20 being "Yes"
     if (questionId === "q21" && instance["q20"] !== "Yes") return false;
     // q23 is conditional on q22 being "Yes"
@@ -111,7 +112,7 @@ function CollapsibleCard({
     if (roleLabels && roleLabels[instanceIndex]) {
       return `${roleLabels[instanceIndex]} Use Case`;
     }
-    return templateId === "ai-disclosure" ? "AI Tool" : "Data Source";
+    return isAIDisclosureTemplate(templateId || "") ? "AI Tool" : "Data Source";
   };
 
   return (
@@ -248,12 +249,11 @@ function PublicFormView({ publicId, onBack }: PublicFormViewProps) {
       <main className="public-main">
         {template?.sectionGroups.map((group) => {
           // Get role labels from first card for AI disclosure template
-          const roleLabels =
-            templateId === "ai-disclosure"
-              ? (instancesData["tasks-performed"] || []).map(
-                  (instance) => instance["q1"] || "",
-                )
-              : undefined;
+          const roleLabels = isAIDisclosureTemplate(templateId)
+            ? (instancesData["tasks-performed"] || []).map(
+                (instance) => instance["q1"] || "",
+              )
+            : undefined;
 
           return (
             <section key={group.title || "default"} className="public-section">
@@ -278,6 +278,29 @@ function PublicFormView({ publicId, onBack }: PublicFormViewProps) {
             </section>
           );
         })}
+
+        {template?.extraAaporSectionIds &&
+          template.extraAaporSectionIds.length > 0 && (
+            <section className="public-section">
+              <h2 className="public-section-title">
+                AAPOR Required Disclosure Elements
+              </h2>
+              {template.extraAaporSectionIds.map((sectionId) => {
+                const card = template.sections.find((s) => s.id === sectionId);
+                if (!card) return null;
+                return (
+                  <CollapsibleCard
+                    key={card.id}
+                    card={card}
+                    instances={instancesData[card.id]}
+                    formData={formData}
+                    templateId="aapor-transparency"
+                    instancesData={instancesData}
+                  />
+                );
+              })}
+            </section>
+          )}
       </main>
 
       <footer className="public-footer">
