@@ -22,7 +22,7 @@ type DashboardProps = {
 };
 
 const DISCLOSURE_LEVEL_OPTIONS: {
-  id: "ai-simple" | "ai-enhanced" | "ai-full";
+  id: "ai-simple" | "ai-enhanced" | "ai-full" | "aapor-transparency";
   label: string;
 }[] = [
   {
@@ -38,6 +38,11 @@ const DISCLOSURE_LEVEL_OPTIONS: {
     id: "ai-full",
     label:
       "Full AAPOR code and AI disclosure for academic publication (e.g., for POQ publication) (i.e., previous + full list of AAPOR required disclosures)",
+  },
+  {
+    id: "aapor-transparency",
+    label:
+      "Full AAPOR code only, no AI disclosure (e.g., for POQ publication)",
   },
 ];
 
