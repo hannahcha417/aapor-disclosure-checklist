@@ -107,6 +107,9 @@ function FormPage({
   const [showAuthorModal, setShowAuthorModal] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(!initialFormId);
   const [showIncompleteModal, setShowIncompleteModal] = useState(false);
+  const [removeUseCaseIndex, setRemoveUseCaseIndex] = useState<number | null>(
+    null,
+  );
   const [incompleteItems, setIncompleteItems] = useState<
     { group: string; question: string; anchor: string; questionId: string }[]
   >([]);
@@ -572,6 +575,35 @@ function FormPage({
         </div>
       )}
 
+      {removeUseCaseIndex !== null && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Remove Use Case?</h2>
+            <p>
+              Are you sure you want to remove this use case? All answers
+              entered for it will be permanently deleted.
+            </p>
+            <div className="modal-buttons">
+              <button
+                className="modal-btn cancel"
+                onClick={() => setRemoveUseCaseIndex(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="modal-btn confirm"
+                onClick={() => {
+                  handleRemoveGlobalInstance(removeUseCaseIndex);
+                  setRemoveUseCaseIndex(null);
+                }}
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showWelcomeModal && (
         <div className="modal-overlay">
           <div className="modal-content welcome-modal">
@@ -875,7 +907,8 @@ function FormPage({
               !showIncompleteModal &&
               !showPublishModal &&
               !showAuthorModal &&
-              !showGuestExitWarning && (
+              !showGuestExitWarning &&
+              removeUseCaseIndex === null && (
                 <button
                   type="button"
                   className="add-use-case-btn add-use-case-btn-floating"
@@ -903,7 +936,7 @@ function FormPage({
                           type="button"
                           className="remove-use-case-btn"
                           onClick={() =>
-                            handleRemoveGlobalInstance(useCaseIndex)
+                            setRemoveUseCaseIndex(useCaseIndex)
                           }
                         >
                           Remove Use Case
