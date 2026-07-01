@@ -264,7 +264,7 @@ export const cardSections: CardData[] = [
       },
       {
         id: "q23",
-        label: "Code: Any scripts or code used to call the AI.",
+        label: "Provide any links to scripts to code used to call the AI system.",
         type: "textarea",
         placeholder: "Type your answer here.",
         tooltip: "",

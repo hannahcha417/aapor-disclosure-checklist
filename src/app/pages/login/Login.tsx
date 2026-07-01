@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { FiFileText, FiX } from "react-icons/fi";
+import { FiX } from "react-icons/fi";
 import { signIn, resetPassword } from "../../../utils/auth";
-import { allTemplates } from "../../../data/templates";
 import "./Auth.css";
 
 type LoginProps = {
@@ -9,6 +8,31 @@ type LoginProps = {
   onLoginSuccess: () => void;
   onGuestLogin: (templateId: string) => void;
 };
+
+const DISCLOSURE_LEVEL_OPTIONS: {
+  id: "ai-simple" | "ai-enhanced" | "ai-full" | "aapor-transparency";
+  label: string;
+}[] = [
+  {
+    id: "ai-simple",
+    label: "Simple AI disclosure (i.e., just AAPOR code regarding AI)",
+  },
+  {
+    id: "ai-enhanced",
+    label:
+      "Enhanced AI disclosure (e.g., for academic publication) (i.e., previous + questions designed to facilitate reproducibility)",
+  },
+  {
+    id: "ai-full",
+    label:
+      "Full AAPOR code and AI disclosure for academic publication (e.g., for POQ publication) (i.e., previous + full list of AAPOR required disclosures)",
+  },
+  {
+    id: "aapor-transparency",
+    label:
+      "Full AAPOR code only, no AI disclosure (e.g., for POQ publication)",
+  },
+];
 
 function Login({ onSwitchToSignup, onLoginSuccess, onGuestLogin }: LoginProps) {
   const [email, setEmail] = useState("");
@@ -19,6 +43,7 @@ function Login({ onSwitchToSignup, onLoginSuccess, onGuestLogin }: LoginProps) {
   const [resetMessage, setResetMessage] = useState("");
   const [showGuestWarning, setShowGuestWarning] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const [selectedLevel, setSelectedLevel] = useState<string>("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,7 +157,10 @@ function Login({ onSwitchToSignup, onLoginSuccess, onGuestLogin }: LoginProps) {
             {showTemplateSelector && (
               <div
                 className="modal-overlay"
-                onClick={() => setShowTemplateSelector(false)}
+                onClick={() => {
+                  setShowTemplateSelector(false);
+                  setSelectedLevel("");
+                }}
               >
                 <div
                   className="modal-content template-modal"
@@ -140,28 +168,63 @@ function Login({ onSwitchToSignup, onLoginSuccess, onGuestLogin }: LoginProps) {
                 >
                   <button
                     className="modal-close"
-                    onClick={() => setShowTemplateSelector(false)}
+                    onClick={() => {
+                      setShowTemplateSelector(false);
+                      setSelectedLevel("");
+                    }}
                   >
                     <FiX />
                   </button>
-                  <h2>Choose a Template</h2>
+                  <h2>Start a New Disclosure</h2>
                   <p className="modal-description">
-                    Select a form template to get started
+                    What disclosure/research purpose are you filling out this
+                    form for?
                   </p>
-                  <div className="template-grid">
-                    {allTemplates.map((template) => (
-                      <div
-                        key={template.id}
-                        className="template-card"
-                        onClick={() => onGuestLogin(template.id)}
+                  <div className="disclosure-level-list">
+                    {DISCLOSURE_LEVEL_OPTIONS.map((opt) => (
+                      <label
+                        key={opt.id}
+                        className={`disclosure-level-option ${
+                          selectedLevel === opt.id ? "selected" : ""
+                        }`}
                       >
-                        <div className="template-card-icon">
-                          <FiFileText />
+                        <input
+                          type="radio"
+                          name="disclosure-level"
+                          value={opt.id}
+                          checked={selectedLevel === opt.id}
+                          onChange={() => setSelectedLevel(opt.id)}
+                        />
+                        <div className="disclosure-level-text">
+                          <span className="disclosure-level-label">
+                            {opt.label}
+                          </span>
                         </div>
-                        <h4>{template.name}</h4>
-                        <p>{template.description}</p>
-                      </div>
+                      </label>
                     ))}
+                  </div>
+                  <div className="modal-buttons">
+                    <button
+                      className="modal-btn cancel"
+                      onClick={() => {
+                        setShowTemplateSelector(false);
+                        setSelectedLevel("");
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="modal-btn confirm"
+                      disabled={!selectedLevel}
+                      onClick={() => {
+                        const level = selectedLevel;
+                        setShowTemplateSelector(false);
+                        setSelectedLevel("");
+                        onGuestLogin(level);
+                      }}
+                    >
+                      Continue
+                    </button>
                   </div>
                 </div>
               </div>

@@ -225,3 +225,161 @@
 .modal-btn.confirm:hover {
   background: #5a6fd6;
 }
+
+/* Template selector modal (guest disclosure-purpose questionnaire) */
+.modal-content.template-modal {
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  text-align: left;
+  position: relative;
+}
+
+.template-modal .modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #666;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.template-modal .modal-close:hover {
+  color: #333;
+}
+
+.template-modal h2 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  text-align: left;
+}
+
+.template-modal .modal-description {
+  color: #666;
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.disclosure-level-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.disclosure-level-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  padding: 1rem 1.25rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: #fff;
+}
+
+.disclosure-level-option:hover {
+  border-color: #667eea;
+  background: #f8f9ff;
+}
+
+.disclosure-level-option.selected {
+  border-color: #667eea;
+  background: #f0f3ff;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+.disclosure-level-option input[type="radio"] {
+  margin-top: 0.25rem;
+  flex-shrink: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 2px solid #cfd4dc;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.disclosure-level-option input[type="radio"]:hover {
+  border-color: #b5bcc7;
+}
+
+.disclosure-level-option input[type="radio"]:checked {
+  border-color: #667eea;
+}
+
+.disclosure-level-option input[type="radio"]:checked::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: #667eea;
+}
+
+.disclosure-level-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.disclosure-level-label {
+  font-weight: 600;
+  color: #333;
+  font-size: 1rem;
+}
+
+.template-modal .modal-buttons {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 0;
+}
+
+.template-modal .modal-btn {
+  flex: 0 0 auto;
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.template-modal .modal-btn.cancel {
+  background: #f1f1f3;
+  color: #555;
+  border: none;
+}
+
+.template-modal .modal-btn.cancel:hover {
+  background: #e5e5ea;
+}
+
+.template-modal .modal-btn.confirm {
+  background: #667eea;
+  color: #fff;
+}
+
+.template-modal .modal-btn.confirm:hover:not(:disabled) {
+  background: #5a6fd6;
+}
+
+.template-modal .modal-btn.confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
