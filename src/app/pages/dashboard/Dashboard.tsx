@@ -5,6 +5,7 @@ import {
   getActiveForms,
   deleteForm,
   getPublishedForms,
+  unpublishForm,
   type FormData,
 } from "../../../utils/forms";
 
@@ -53,6 +54,10 @@ function Dashboard({ onCreateForm, onOpenForm, onLogout }: DashboardProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState<string>("");
+  const [unpublishTarget, setUnpublishTarget] = useState<FormData | null>(
+    null,
+  );
+  const [unpublishing, setUnpublishing] = useState(false);
 
   useEffect(() => {
     loadActiveForms();
@@ -115,6 +120,34 @@ function Dashboard({ onCreateForm, onOpenForm, onLogout }: DashboardProps) {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const requestUnpublish = (e: React.MouseEvent, form: FormData) => {
+    e.stopPropagation();
+    setUnpublishTarget(form);
+  };
+
+  const confirmUnpublish = async () => {
+    if (!unpublishTarget?.id) return;
+    setUnpublishing(true);
+    try {
+      const { error } = await unpublishForm(unpublishTarget.id);
+      if (!error) {
+        setPublishedForms((prev) =>
+          prev.filter((f) => f.id !== unpublishTarget.id),
+        );
+        setUnpublishTarget(null);
+        loadActiveForms();
+      } else {
+        console.error("Error unpublishing form:", error);
+        alert("Failed to unpublish form. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error unpublishing form:", error);
+      alert("Failed to unpublish form. Please try again.");
+    } finally {
+      setUnpublishing(false);
+    }
   };
 
   const handleDelete = async (e: React.MouseEvent, formId: string) => {
@@ -289,17 +322,27 @@ function Dashboard({ onCreateForm, onOpenForm, onLogout }: DashboardProps) {
                       {getPublicUrl(form.public_id!)}
                     </p>
                   </div>
-                  <button
-                    className="action-btn copy-btn"
-                    onClick={(e) => copyToClipboard(e, form.public_id!)}
-                    aria-label="Copy link"
-                    title="Copy link"
-                  >
-                    <FiCopy />
-                    {copiedId === form.public_id && (
-                      <span className="copied-tooltip">Copied!</span>
-                    )}
-                  </button>
+                  <div className="published-actions">
+                    <button
+                      className="action-btn copy-btn"
+                      onClick={(e) => copyToClipboard(e, form.public_id!)}
+                      aria-label="Copy link"
+                      title="Copy link"
+                    >
+                      <FiCopy />
+                      {copiedId === form.public_id && (
+                        <span className="copied-tooltip">Copied!</span>
+                      )}
+                    </button>
+                    <button
+                      className="action-btn unpublish-btn"
+                      onClick={(e) => requestUnpublish(e, form)}
+                      aria-label="Unpublish link"
+                      title="Unpublish link"
+                    >
+                      <FiTrash2 />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -317,6 +360,43 @@ function Dashboard({ onCreateForm, onOpenForm, onLogout }: DashboardProps) {
             Logout
           </button>
         </div>
+
+        {unpublishTarget && (
+          <div
+            className="modal-overlay"
+            onClick={() => !unpublishing && setUnpublishTarget(null)}
+          >
+            <div
+              className="modal-content"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2>Unpublish this link?</h2>
+              <p>
+                The public link for{" "}
+                <strong>{unpublishTarget.title}</strong> will stop working.
+                Anyone with the link will no longer be able to view it. The
+                form itself will remain in your Active Forms and can be
+                published again later.
+              </p>
+              <div className="modal-buttons">
+                <button
+                  className="modal-btn cancel"
+                  onClick={() => setUnpublishTarget(null)}
+                  disabled={unpublishing}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="modal-btn confirm"
+                  onClick={confirmUnpublish}
+                  disabled={unpublishing}
+                >
+                  {unpublishing ? "Unpublishing..." : "Unpublish"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

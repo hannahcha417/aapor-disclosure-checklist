@@ -207,6 +207,11 @@
   background: rgba(173, 181, 255, 0.1);
 }
 
+.unpublish-btn:hover {
+  color: #e53e3e;
+  background: rgba(229, 62, 62, 0.1);
+}
+
 .copied-tooltip {
   position: absolute;
   top: -25px;
