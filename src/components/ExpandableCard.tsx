@@ -356,17 +356,26 @@ function ExpandableCard({
 
   return (
     <div className="card" id={anchorPrefix ? `card-${anchorPrefix}` : undefined}>
-      <div className="card-header">
+      <div
+        className="card-header"
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
+        aria-label={expanded ? "Collapse section" : "Expand section"}
+        onClick={toggleExpanded}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            toggleExpanded();
+          }
+        }}
+      >
         <div className="card-title-container">
           <h1>{card.title}</h1>
         </div>
-        <button
-          className="arrow-btn"
-          onClick={toggleExpanded}
-          aria-label={expanded ? "Collapse" : "Expand"}
-        >
+        <span className="arrow-btn" aria-hidden="true">
           {expanded ? "▲" : "▼"}
-        </button>
+        </span>
       </div>
 
       {expanded && (

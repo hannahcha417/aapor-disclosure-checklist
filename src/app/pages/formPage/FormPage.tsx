@@ -336,6 +336,39 @@ function FormPage({
       return true;
     };
 
+    // Mirrors the per-question conditional visibility used by ExpandableCard.
+    // Returns false when a question is hidden and therefore should not be
+    // reported as an incomplete required item.
+    const isQuestionVisible = (
+      questionId: string,
+      instance: Record<string, any>,
+      role?: string,
+    ): boolean => {
+      if (isAIDisclosureTemplate(templateId)) {
+        // q6 (Instrument/Interface) and q7 (Disclosure Possible) only show
+        // if q5 is "Embedded in third-party platform/tool"
+        if (
+          (questionId === "q6" || questionId === "q7") &&
+          instance["q5"] !== "Embedded in third-party platform/tool"
+        ) {
+          return false;
+        }
+        // q13 (AI as Interviewer) only shows if the role is "Interviewer"
+        if (questionId === "q13") {
+          const instanceRole = role ?? instance["q1"];
+          if (instanceRole !== "Interviewer") return false;
+        }
+        // q18 (Fine-Tuning Details) only shows if q17 is "Yes"
+        if (questionId === "q18" && instance["q17"] !== "Yes") return false;
+      } else {
+        // AAPOR follow-up questions are conditional on prior Yes/No answers
+        if (questionId === "q21" && instance["q20"] !== "Yes") return false;
+        if (questionId === "q23" && instance["q22"] !== "Yes") return false;
+        if (questionId === "q25" && instance["q24"] !== "Yes") return false;
+      }
+      return true;
+    };
+
     if (isAIDisclosureTemplate(templateId)) {
       const useCases = instancesData["tasks-performed"] || [{}];
       useCases.forEach((_, useCaseIndex) => {
@@ -382,6 +415,7 @@ function FormPage({
               instancesData[sectionId]?.[useCaseIndex] || {};
             card.questions.forEach((q) => {
               if (!q.required) return;
+              if (!isQuestionVisible(q.id, instance, roleLabel)) return;
               if (!isAnswered(instance[q.id])) {
                 items.push({
                   group: `${useCaseTitle} — ${card.title}`,
@@ -407,6 +441,7 @@ function FormPage({
               : card.title;
           card.questions.forEach((q) => {
             if (!q.required) return;
+            if (!isQuestionVisible(q.id, instance)) return;
             if (!isAnswered(instance[q.id])) {
               items.push({
                 group: groupLabel,
@@ -431,6 +466,7 @@ function FormPage({
                 : card.title;
             card.questions.forEach((q) => {
               if (!q.required) return;
+              if (!isQuestionVisible(q.id, instance)) return;
               if (!isAnswered(instance[q.id])) {
                 items.push({
                   group: groupLabel,

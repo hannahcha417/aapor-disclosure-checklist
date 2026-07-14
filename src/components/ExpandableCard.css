@@ -11,6 +11,23 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.card-header:hover .arrow-btn {
+  opacity: 0.6;
+}
+
+.card-header:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.card-header:focus:not(:focus-visible) {
+  outline: none;
 }
 
 .card-header h1 {
@@ -23,10 +40,10 @@
   background: none;
   border: none;
   font-size: 0.8rem;
-  cursor: pointer;
   color: var(--text-primary);
   opacity: 1;
   transition: opacity 0.2s ease;
+  pointer-events: none;
 }
 
 .arrow-btn:hover {
