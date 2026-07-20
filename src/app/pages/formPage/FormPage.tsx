@@ -312,22 +312,21 @@ function FormPage({
     });
   };
 
-  // Compute the list of required questions that have not been answered,
-  // honoring the conditional visibility rules used for rendering the form.
-  const getIncompleteRequired = (): {
-    group: string;
-    question: string;
-    anchor: string;
-    questionId: string;
-  }[] => {
-    if (!template) return [];
-
-    const items: {
-      group: string;
-      question: string;
+  // Walk every currently-visible required question in the form and invoke
+  // the callback for each one. Mirrors the conditional visibility used by
+  // the renderer so hidden questions are skipped. Shared by both
+  // getIncompleteRequired (for the export blocking modal) and
+  // getRequiredCounts (for the top-of-page progress bar).
+  const iterateVisibleRequired = (
+    cb: (info: {
+      groupLabel: string;
+      question: { id: string; label: string; required?: boolean };
       anchor: string;
       questionId: string;
-    }[] = [];
+      answered: boolean;
+    }) => void,
+  ): void => {
+    if (!template) return;
 
     const isAnswered = (val: any) => {
       if (val === undefined || val === null) return false;
@@ -416,14 +415,13 @@ function FormPage({
             card.questions.forEach((q) => {
               if (!q.required) return;
               if (!isQuestionVisible(q.id, instance, roleLabel)) return;
-              if (!isAnswered(instance[q.id])) {
-                items.push({
-                  group: `${useCaseTitle} — ${card.title}`,
-                  question: q.label,
-                  anchor: `${anchorPrefix}-i0-${q.id}`,
-                  questionId: anchorPrefix,
-                });
-              }
+              cb({
+                groupLabel: `${useCaseTitle} — ${card.title}`,
+                question: q,
+                anchor: `${anchorPrefix}-i0-${q.id}`,
+                questionId: anchorPrefix,
+                answered: isAnswered(instance[q.id]),
+              });
             });
           });
         });
@@ -442,14 +440,13 @@ function FormPage({
           card.questions.forEach((q) => {
             if (!q.required) return;
             if (!isQuestionVisible(q.id, instance)) return;
-            if (!isAnswered(instance[q.id])) {
-              items.push({
-                group: groupLabel,
-                question: q.label,
-                anchor: `${sectionId}-i${idx}-${q.id}`,
-                questionId: sectionId,
-              });
-            }
+            cb({
+              groupLabel,
+              question: q,
+              anchor: `${sectionId}-i${idx}-${q.id}`,
+              questionId: sectionId,
+              answered: isAnswered(instance[q.id]),
+            });
           });
         });
       });
@@ -467,22 +464,61 @@ function FormPage({
             card.questions.forEach((q) => {
               if (!q.required) return;
               if (!isQuestionVisible(q.id, instance)) return;
-              if (!isAnswered(instance[q.id])) {
-                items.push({
-                  group: groupLabel,
-                  question: q.label,
-                  anchor: `${sectionId}-i${idx}-${q.id}`,
-                  questionId: sectionId,
-                });
-              }
+              cb({
+                groupLabel,
+                question: q,
+                anchor: `${sectionId}-i${idx}-${q.id}`,
+                questionId: sectionId,
+                answered: isAnswered(instance[q.id]),
+              });
             });
           });
         });
       });
     }
+  };
 
+  // Compute the list of required questions that have not been answered,
+  // honoring the conditional visibility rules used for rendering the form.
+  const getIncompleteRequired = (): {
+    group: string;
+    question: string;
+    anchor: string;
+    questionId: string;
+  }[] => {
+    const items: {
+      group: string;
+      question: string;
+      anchor: string;
+      questionId: string;
+    }[] = [];
+    iterateVisibleRequired((info) => {
+      if (!info.answered) {
+        items.push({
+          group: info.groupLabel,
+          question: info.question.label,
+          anchor: info.anchor,
+          questionId: info.questionId,
+        });
+      }
+    });
     return items;
   };
+
+  // Progress across all currently-visible required questions.
+  const requiredCounts = (() => {
+    let answered = 0;
+    let total = 0;
+    iterateVisibleRequired((info) => {
+      total++;
+      if (info.answered) answered++;
+    });
+    return { answered, total };
+  })();
+  const progressPct =
+    requiredCounts.total > 0
+      ? Math.round((requiredCounts.answered / requiredCounts.total) * 100)
+      : 0;
 
   const runExport = async () => {
     try {
@@ -878,20 +914,57 @@ function FormPage({
       </header>
 
       <main className="content">
+        {requiredCounts.total > 0 && (
+          <div
+            className="progress-panel"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progressPct}
+            aria-label="Form completion progress"
+          >
+            <div className="progress-label">
+              <span>Progress</span>
+              <span>
+                {requiredCounts.answered} of {requiredCounts.total} required
+                answered ({progressPct}%)
+              </span>
+            </div>
+            <div className="progress-track">
+              <div
+                className="progress-fill"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </div>
+        )}
         <div className="instructions">
-          <div className="instructions-header">
+          <div
+            className="instructions-header"
+            role="button"
+            tabIndex={0}
+            aria-expanded={instructionsExpanded}
+            aria-label={
+              instructionsExpanded
+                ? "Collapse instructions"
+                : "Expand instructions"
+            }
+            onClick={() => setInstructionsExpanded(!instructionsExpanded)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setInstructionsExpanded(!instructionsExpanded);
+              }
+            }}
+          >
             <h3>
               {isAIDisclosureTemplate(templateId)
                 ? "For each question in this checklist, the researcher should indicate one of the following:"
                 : "Instructions for AAPOR Required Disclosure Elements:"}
             </h3>
-            <button
-              className="arrow-btn"
-              onClick={() => setInstructionsExpanded(!instructionsExpanded)}
-              aria-label={instructionsExpanded ? "Collapse" : "Expand"}
-            >
+            <span className="arrow-btn" aria-hidden="true">
               {instructionsExpanded ? "▲" : "▼"}
-            </button>
+            </span>
           </div>
           {instructionsExpanded && (
             <div className="instructions-content">

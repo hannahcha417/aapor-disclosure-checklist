@@ -128,6 +128,51 @@
   gap: 2rem;
 }
 
+.progress-panel {
+  position: sticky;
+  top: 1rem;
+  z-index: 20;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.65rem 1rem 0.75rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.progress-label span:first-child {
+  font-weight: 600;
+}
+
+.progress-label span:last-child {
+  color: #555;
+  font-variant-numeric: tabular-nums;
+}
+
+.progress-track {
+  width: 100%;
+  height: 10px;
+  background: #eef0f6;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #736be7 0%, #8f88ee 100%);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
 section h2 {
   font-size: 1.5rem;
   margin-top: 0;
@@ -151,6 +196,23 @@ section p {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.5rem;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.instructions-header:hover .arrow-btn {
+  opacity: 0.6;
+}
+
+.instructions-header:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
+.instructions-header:focus:not(:focus-visible) {
+  outline: none;
 }
 
 .instructions-header h3 {
@@ -164,10 +226,10 @@ section p {
   background: none;
   border: none;
   font-size: 0.8rem;
-  cursor: pointer;
   color: var(--text-primary);
   opacity: 1;
   transition: opacity 0.2s ease;
+  pointer-events: none;
 }
 
 .instructions .arrow-btn:hover {
