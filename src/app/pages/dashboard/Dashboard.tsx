@@ -8,6 +8,8 @@ import {
   unpublishForm,
   type FormData,
 } from "../../../utils/forms";
+import { computeFormProgress } from "../../../utils/progress";
+import { DEFAULT_TEMPLATE_ID } from "../../../data/templates";
 
 type DashboardProps = {
   onCreateForm: (templateId: string) => void;
@@ -262,39 +264,68 @@ function Dashboard({ onCreateForm, onOpenForm, onLogout }: DashboardProps) {
             <p>Loading forms...</p>
           ) : activeForms.length > 0 ? (
             <div className="forms-grid">
-              {activeForms.map((form) => (
-                <div
-                  key={form.id}
-                  className="form-card"
-                  onClick={() =>
-                    onOpenForm(
-                      form.id!,
-                      form.title,
-                      form.form_data,
-                      form.public_id,
-                      form.is_public,
-                      form.template_id,
-                    )
-                  }
-                >
-                  <div className="form-card-icon">
-                    <FiFileText />
-                  </div>
-                  <div className="form-card-content">
-                    <h4>{form.title}</h4>
-                    <p className="form-card-date">
-                      Last edited: {formatDate(form.updated_at!)}
-                    </p>
-                  </div>
-                  <button
-                    className="delete-btn"
-                    onClick={(e) => handleDelete(e, form.id!)}
-                    aria-label="Delete form"
+              {activeForms.map((form) => {
+                const progress = computeFormProgress(
+                  form.template_id || DEFAULT_TEMPLATE_ID,
+                  form.form_data,
+                );
+                return (
+                  <div
+                    key={form.id}
+                    className="form-card"
+                    onClick={() =>
+                      onOpenForm(
+                        form.id!,
+                        form.title,
+                        form.form_data,
+                        form.public_id,
+                        form.is_public,
+                        form.template_id,
+                      )
+                    }
                   >
-                    <FiTrash2 />
-                  </button>
-                </div>
-              ))}
+                    <div className="form-card-icon">
+                      <FiFileText />
+                    </div>
+                    <div className="form-card-content">
+                      <h4>{form.title}</h4>
+                      <p className="form-card-date">
+                        Last edited: {formatDate(form.updated_at!)}
+                      </p>
+                      {progress.total > 0 && (
+                        <div
+                          className="form-card-progress"
+                          role="progressbar"
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-valuenow={progress.percent}
+                          aria-label="Form completion progress"
+                        >
+                          <div className="form-card-progress-label">
+                            <span>
+                              {progress.answered}/{progress.total} answered
+                            </span>
+                            <span>{progress.percent}%</span>
+                          </div>
+                          <div className="form-card-progress-track">
+                            <div
+                              className="form-card-progress-fill"
+                              style={{ width: `${progress.percent}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      className="delete-btn"
+                      onClick={(e) => handleDelete(e, form.id!)}
+                      aria-label="Delete form"
+                    >
+                      <FiTrash2 />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="empty-state">
