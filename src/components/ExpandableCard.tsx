@@ -164,14 +164,17 @@ function ExpandableCard({
           ) {
             return null;
           }
-          // q13 (AI as Interviewer) only shows if the role for this instance is "Interviewer"
+          // q13 (AI as Interviewer) only shows if the role for this instance includes "Interviewer"
           if (question.id === "q13") {
             // For tasks-performed card, check instance["q1"] directly
             // For other cards, check roleLabels
             const role = roleLabels
               ? roleLabels[instanceIndex]
               : instance["q1"];
-            if (role !== "Interviewer") {
+            const roleValues = String(role || "")
+              .split(",")
+              .map((v) => v.trim());
+            if (!roleValues.includes("Interviewer")) {
               return null;
             }
           }
@@ -260,6 +263,49 @@ function ExpandableCard({
                         onClick={() =>
                           handleValueChange(instanceIndex, question.id, option)
                         }
+                      >
+                        {option}
+                        {optionTooltip && (
+                          <span className="option-tooltip-container">
+                            <span className="option-tooltip-icon">?</span>
+                            <span className="option-tooltip-text">
+                              {optionTooltip}
+                            </span>
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : question.type === "multi-button" && question.options ? (
+                <div className="button-group">
+                  {question.options.map((option) => {
+                    const currentValues = instance[question.id]
+                      ? instance[question.id]
+                          .split(", ")
+                          .filter((v: string) => v)
+                      : [];
+                    const isSelected = currentValues.includes(option);
+                    const optionTooltip = question.optionTooltips?.[option];
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        className={`option-button ${
+                          isSelected ? "selected" : ""
+                        }`}
+                        onClick={() => {
+                          const newValues = isSelected
+                            ? currentValues.filter(
+                                (v: string) => v !== option,
+                              )
+                            : [...currentValues, option];
+                          handleValueChange(
+                            instanceIndex,
+                            question.id,
+                            newValues.join(", "),
+                          );
+                        }}
                       >
                         {option}
                         {optionTooltip && (

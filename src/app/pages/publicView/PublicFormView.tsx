@@ -23,10 +23,13 @@ function shouldShowQuestion(
     instance["q5"] !== "Embedded in third-party platform/tool"
   )
     return false;
-  // q13 (AI as Interviewer) only shows if the role is "Interviewer"
+  // q13 (AI as Interviewer) only shows if the role includes "Interviewer"
   if (questionId === "q13") {
     const instanceRole = role || instance["q1"];
-    if (instanceRole !== "Interviewer") return false;
+    const roleValues = String(instanceRole || "")
+      .split(",")
+      .map((v) => v.trim());
+    if (!roleValues.includes("Interviewer")) return false;
   }
   // q18 (Fine-Tuning Details) only shows if q17 is "Yes"
   if (questionId === "q18" && instance["q17"] !== "Yes") return false;

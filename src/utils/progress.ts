@@ -31,7 +31,10 @@ const isQuestionVisible = (
     }
     if (questionId === "q13") {
       const instanceRole = role ?? instance["q1"];
-      if (instanceRole !== "Interviewer") return false;
+      const roleValues = String(instanceRole || "")
+        .split(",")
+        .map((v) => v.trim());
+      if (!roleValues.includes("Interviewer")) return false;
     }
     if (questionId === "q18" && instance["q17"] !== "Yes") return false;
   } else {

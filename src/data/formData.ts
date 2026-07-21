@@ -1,7 +1,7 @@
 ﻿export interface Question {
   id: string;
   label: string;
-  type: "text" | "textarea" | "radio" | "checkbox";
+  type: "text" | "textarea" | "radio" | "checkbox" | "multi-button";
   placeholder?: string;
   options?: string[];
   optionTooltips?: Record<string, string>;
@@ -26,7 +26,7 @@ export const cardSections: CardData[] = [
       {
         id: "q1",
         label: "How was the AI tool used?",
-        type: "radio",
+        type: "multi-button",
         options: ["Interviewer", "Respondent", "Analyst", "Other"],
         optionTooltips: {
           Interviewer:
@@ -34,7 +34,7 @@ export const cardSections: CardData[] = [
           Respondent: "Simulating the target population.",
           Analyst: "Cleaning, labeling, or modeling the raw data",
         },
-        tooltip: "",
+        tooltip: "Select all that apply.",
         required: true,
       },
       {
